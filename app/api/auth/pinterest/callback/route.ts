@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { exchangeCodeForTokens, getAccountInfo } from "@/lib/pinterest-api"
+import { encrypt } from "@/utils/encryption"
 
 /**
  * Pinterest OAuth Callback
@@ -92,14 +93,19 @@ export async function GET(req: NextRequest) {
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
 
+    // Encrypt tokens at rest — AES-256-GCM via utils/encryption.ts
+    // ENCRYPTION_KEY must be set as a 64-hex-char env var.
+    const encryptedAccessToken = encrypt(tokens.access_token)
+    const encryptedRefreshToken = encrypt(tokens.refresh_token)
+
     // Upsert connection
     const { error: dbError } = await supabase
       .from("pinterest_connections")
       .upsert({
         user_id: user.id,
         pinterest_user_id: pinterestUserId,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
+        access_token: encryptedAccessToken,
+        refresh_token: encryptedRefreshToken,
         expires_at: expiresAt.toISOString(),
         account_age_days: accountAge,
         trust_score: trustScore,

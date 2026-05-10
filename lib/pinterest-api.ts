@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { encrypt, decrypt } from '@/utils/encryption'
 
 const PINTEREST_API_BASE = 'https://api-sandbox.pinterest.com/v5'
 const PINTEREST_OAUTH_BASE = 'https://www.pinterest.com/oauth'
@@ -69,26 +70,29 @@ export async function getValidAccessToken(userId: string): Promise<string | null
 
   if (!connection) return null
 
+  // Decrypt the stored token before use
+  const decryptedAccessToken = decrypt(connection.access_token)
+
   // Check if token is expired (with 5-minute buffer)
   const expiresAt = new Date(connection.expires_at)
   const now = new Date()
   const bufferMs = 5 * 60 * 1000
 
   if (expiresAt.getTime() - now.getTime() > bufferMs) {
-    return connection.access_token
+    return decryptedAccessToken
   }
 
-  // Token expired — refresh it
+  // Token expired — refresh it (pass encrypted refresh token; refreshAccessToken decrypts it internally)
   const newTokens = await refreshAccessToken(connection.refresh_token)
   if (!newTokens) return null
 
-  // Update in database
+  // Re-encrypt new tokens before writing back to the database
   const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000)
   await supabase
     .from('pinterest_connections')
     .update({
-      access_token: newTokens.access_token,
-      refresh_token: newTokens.refresh_token || connection.refresh_token,
+      access_token: encrypt(newTokens.access_token),
+      refresh_token: encrypt(newTokens.refresh_token || decrypt(connection.refresh_token)),
       expires_at: newExpiresAt.toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -109,6 +113,9 @@ async function refreshAccessToken(refreshToken: string): Promise<{
     `${process.env.PINTEREST_APP_ID}:${process.env.PINTEREST_APP_SECRET}`
   ).toString('base64')
 
+  // refreshToken arrives from the DB as an encrypted value — decrypt before sending to Pinterest
+  const decryptedRefreshToken = decrypt(refreshToken)
+
   const res = await fetch(PINTEREST_TOKEN_URL, {
     method: 'POST',
     headers: {
@@ -117,7 +124,7 @@ async function refreshAccessToken(refreshToken: string): Promise<{
     },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: refreshToken,
+      refresh_token: decryptedRefreshToken,
     }),
   })
 
