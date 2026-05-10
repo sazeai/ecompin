@@ -121,18 +121,19 @@ export function StepBrand({ data, onChange }: StepBrandProps) {
           />
         </div>
 
-        {/* Store URL */}
+        {/* Pin Label */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-900">Store URL</label>
+          <label className="text-sm font-medium text-neutral-900">Pin Label</label>
           <Input
-            type="url"
+            type="text"
             value={data.store_url}
             onChange={e => onChange({ store_url: e.target.value })}
-            placeholder="https://yourstore.com"
+            placeholder="yourshop.com"
+            maxLength={40}
             className="h-12 rounded-xl border-neutral-200 bg-white px-4 text-base"
           />
           <p className="text-xs text-neutral-500">
-            Used as the destination link and CTA source across generated pins.
+            This short label is printed on your pins. Use your domain (yourshop.com) or a short store name. Max ~30 chars.
           </p>
         </div>
       </div>

@@ -315,22 +315,23 @@ export default function BrandSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[15px] font-semibold text-[#1a1a1a]">Store URL</label>
+                <label className="text-[15px] font-semibold text-[#1a1a1a]">Pin Label</label>
                 <Input
-                  type="url"
+                  type="text"
                   value={form.store_url}
                   onChange={e => setForm(p => ({ ...p, store_url: e.target.value }))}
-                  placeholder="https://yourstore.com"
+                  placeholder="yourshop.com"
+                  maxLength={40}
                   className="h-[46px] rounded-xl border border-[#e2e4e7] bg-[#f2f3f5] px-4 text-[15px] text-[#1a1a1a] shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] focus:bg-white focus:ring-2 focus:ring-[#1a1a1a]/20 transition-colors"
                 />
-                <p className="text-[13px] text-[#666666]">Used as the destination and CTA source across generated pins.</p>
+                <p className="text-[13px] text-[#666666]">Printed on your pin images when the badge is on. Keep it short — use your domain (yourshop.com) or store name (My Shop).</p>
               </div>
 
               <div className="pt-2">
                 <div className="flex items-center justify-between bg-[#f2f3f5] p-3 rounded-xl border border-[#e2e4e7]/80">
                   <div className="pl-2">
-                    <label className="text-[15px] font-semibold text-[#1a1a1a]">Show Store URL on Pins</label>
-                    <p className="mt-0.5 text-[13px] text-[#666666]">Overlay your store URL as a CTA badge on generated pin images.</p>
+                    <label className="text-[15px] font-semibold text-[#1a1a1a]">Show Pin Label on Pins</label>
+                    <p className="mt-0.5 text-[13px] text-[#666666]">Overlay your store label as a CTA badge on generated pin images.</p>
                   </div>
                   <div className="bg-white px-1 pt-1 rounded-xl border border-[#e2e4e7]">
                     <button
