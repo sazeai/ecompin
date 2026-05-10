@@ -174,14 +174,16 @@ ${showcaseBlock}
 Aesthetic mood: "${pickedAesthetic.tag}" — ${pickedAesthetic.definition}
 ${authenticHandmadeMode ? `Keep it modest and believable — small-business realism.` : ""}
 
-Write a scene concept for this product photo. The showcase constraints are locked above. You ONLY add:
-- Surface/background material and color
-- Lighting direction and atmosphere (bokeh, steam, morning glow, etc.)
-- Apply the aesthetic's color palette to the ENVIRONMENT only
+THINK FIRST (reasoning only — do not include this in your output):
+Given the product and the locked showcase above, ask yourself:
+- What specific real-world moment is this shot capturing? (morning routine, beach day, studio shoot, workout, gifting, commute, date night, cooking, etc.)
+- Who is present in that moment and what are they doing?
+- What surfaces, textures, and light sources naturally exist in that real moment?
+Then apply the aesthetic's color palette and lighting character to that real environment — not to a generic surface.
 
-${pastAngles && pastAngles.length > 0 ? `Already done — be DIFFERENT:\n${pastAngles.slice(0, 10).map(a => `• ${a}`).join("\n")}` : ""}
+${pastAngles && pastAngles.length > 0 ? `Already done — choose a DIFFERENT real-world moment each time:\n${pastAngles.slice(0, 10).map(a => `• ${a}`).join("\n")}` : ""}
 
-Output a single scene concept, max 20 words. Surface + lighting + atmosphere only.`
+Output a single scene concept grounded in a specific real-world moment, max 20 words. Surface + lighting + atmosphere only.`
 
     const angleResponse = await ai.models.generateContent({
       model: "gemini-2.5-flash",

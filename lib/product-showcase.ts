@@ -564,36 +564,50 @@ export interface ShowcaseAnalysis {
   }[]
 }
 
-const SHOWCASE_PROMPT = `You are a product photographer planning shots. Decide HOW to present this product.
+const SHOWCASE_PROMPT = `You are a product photographer planning shots. Before deciding HOW to shoot this product, think about WHERE and HOW it exists in the real world.
 
 PRODUCT: "{title}"
 {descriptionLine}
 
-Return 2-4 different shot options ranked by buyer appeal. For EACH shot:
+STEP 1 — THINK FIRST (reasoning only, not in your output):
+Ask yourself:
+- Who owns or uses this product, and what are they doing when they use it?
+- In what specific daily-life moments does this product appear? (morning routine, beach day, workout, gifting, cooking, commute, studio shoot, date night, etc.)
+- Where is it physically found in those moments? (on a body part, in a room, outdoors, on a shelf, in someone's hand, on a display stand, etc.)
+- What would a photographer actually point their camera at to capture this product in its real context?
 
-presentationMode (pick one):
-- "worn-on-model": show on person/animal (clothing, jewelry, accessories)
-- "held-in-hand": show being held (small items, skincare, beverages)
-- "styled-on-surface": arrange on surface (decor, boxes, jars, accessories)
-- "in-use-action": show being used (food eaten, serum applied, collar on dog)
-- "flat-lay-arrangement": overhead spread (kits, multi-piece sets)
+STEP 2 — SHOT OPTIONS:
+From those real-world moments, return 2-4 different shot options ranked by buyer appeal. Each shot must come from a distinct real-world moment — not just variations of the same generic setup.
+
+For EACH shot:
+presentationMode (choose based on the real-world moment, not a default):
+- "worn-on-model": product on a real person or animal body part — for any wearable in its worn context (anklet on bare ankle at the pool, collar on a dog mid-walk, ring on finger near a vanity, sneakers on feet mid-stride)
+- "held-in-hand": product being held or handled by a person — for items naturally picked up (serum bottle, small gift box, coffee cup)
+- "styled-on-surface": product resting on a surface from its actual world — not a generic table, but a specific surface that belongs to the product's life (candle on a rain-wet windowsill, planter on a bathroom shelf, jar on a kitchen counter between cooking)
+- "in-use-action": product actively in use in its real context (shoe mid-stride on wet pavement, serum being massaged in, food being eaten at the table)
+- "flat-lay-arrangement": overhead spread — only for kits, sets, or multi-piece products where seeing all items together is the point
+
+Studio display setups (mannequin leg, jewelry bust, display stand, styled studio table) are valid naturalEnvironments — treat them as their own context when they suit the product.
 
 cameraAngle: "eye-level front" | "eye-level three-quarter" | "close-up detail" | "overhead flat-lay" | "low-angle hero" | "over-the-shoulder"
 
-heroAction: specific pose/action in max 12 words (e.g. "dog wearing collar on morning walk, ears perked")
+heroAction: the specific real-world action or pose in max 12 words — must be contextually accurate to how this product is actually encountered
+- Good: "anklet on bare ankle resting on sun-warmed pool ledge"
+- Good: "sneaker sole facing camera, low angle on wet city pavement"
+- Bad: "anklet displayed on dark surface" (no real-world context)
 
-naturalEnvironment: 1-2 specific locations in max 10 words (e.g. "sunny park path with grass edge")
-
-Do NOT suggest any props, accessories, or additional objects. The scene should contain ONLY the product on the described surface/environment.
+naturalEnvironment: 1-2 specific real locations from this product's actual world in max 10 words
+- Good: "yoga studio with wooden floor and morning window light"
+- Bad: "indoor setting" (too generic)
 
 productAppearance: the product's actual colors, materials, and key design details in max 15 words. Critical for preservation.
 - Good: "brown leather collar with turquoise padding, gold buckle, silver conchos"
 - Bad: "collar" (no visual detail)
 
 Keep size and support physically believable:
-- small jewelry or boxes should stay in macro or hand-level setups, not become room decor
-- apparel on a surface must clearly rest flat on a real horizontal surface, never floating
-- never mention "hand", "finger", or body parts in environments unless the mode is "worn-on-model" or "held-in-hand"
+- wearable items (jewelry, shoes, accessories) should default to being worn or on a display stand — not floating on a generic surface
+- apparel laid flat must clearly rest on a real horizontal surface, never floating
+- small products need close framing — do not place them in full-room scenes where they'd disappear
 
 Return ONLY valid JSON:
 {
@@ -605,7 +619,7 @@ Return ONLY valid JSON:
     "supportRule": "how the product must be physically supported (e.g. must rest on flat surface, must be worn, can hang on wall)",
     "maxSceneDepth": "macro close-up|tabletop vignette|room corner|full room",
     "propWorld": "the product's natural prop universe in max 5 words (e.g. desk office supplies, kitchen dining, pet gear and toys)",
-    "forbiddenContexts": ["contexts that would look wrong for this product", "e.g. full room scenes, outdoor"]
+    "forbiddenContexts": ["contexts that would look wrong for this product"]
   },
   "viableModes": [
     {
