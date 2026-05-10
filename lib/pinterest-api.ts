@@ -11,9 +11,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { encrypt, decrypt } from '@/utils/encryption'
 
-const PINTEREST_API_BASE = 'https://api-sandbox.pinterest.com/v5'
+const PINTEREST_API_BASE = 'https://api.pinterest.com/v5'
 const PINTEREST_OAUTH_BASE = 'https://www.pinterest.com/oauth'
-const PINTEREST_TOKEN_URL = 'https://api-sandbox.pinterest.com/v5/oauth/token'
+const PINTEREST_TOKEN_URL = 'https://api.pinterest.com/v5/oauth/token'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
