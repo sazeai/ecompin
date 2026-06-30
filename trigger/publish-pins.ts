@@ -224,13 +224,23 @@ export const publishPins = schedules.task({
             // The .eq("status", "pending") in the WHERE clause acts as a guard —
             // if a concurrent run already claimed this item, 0 rows are updated
             // and we skip it. This eliminates the race window entirely.
-            const { data: claimed } = await supabase
+            //
+            // We MUST destructure `error` here. Historically this was only
+            // destructuring `data`, which caused Postgres CHECK-constraint
+            // violations (e.g. "processing" not in allowed enum) to be silently
+            // swallowed — the publisher then thought a concurrent worker had
+            // claimed the row and skipped it, so pins were never published.
+            const { data: claimed, error: claimError } = await supabase
               .from("pin_queue")
               .update({ status: "processing" })
               .eq("id", queueItem.id)
               .eq("status", "pending") // Guard: only claim if still pending
               .select("id")
 
+            if (claimError) {
+              logger.error(`Pin ${queueItem.pin_id}: claim failed — ${claimError.message}`)
+              continue
+            }
             if (!claimed || claimed.length === 0) {
               logger.info(`Pin ${queueItem.pin_id}: already claimed by a concurrent run, skipping`)
               continue
@@ -358,11 +368,39 @@ export const publishPins = schedules.task({
           }
         }
 
-        // Log account health
+        // Log account health.
+        // NOTE: pins_this_week and url_pins_this_week are NOT NULL on the
+        // account_health_log table. Historically the publisher's insert was
+        // missing these two columns, which caused Postgres to reject the
+        // insert every run. The outer try/catch then swallowed the failure,
+        // making the publisher appear to "succeed silently" while no health
+        // telemetry was being written at all.
+        //
+        // We compute the same two weekly counters that account-warmup.ts
+        // computes, so both writers produce identical shapes.
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+        const { count: pinsThisWeek } = await supabase
+          .from("pins")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user_id)
+          .eq("status", "published")
+          .gte("published_at", oneWeekAgo)
+
+        const { count: urlPinsThisWeek } = await supabase
+          .from("pins")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user_id)
+          .eq("status", "published")
+          .eq("is_mood_board", false)
+          .gte("published_at", oneWeekAgo)
+
         await supabase.from("account_health_log").insert({
           user_id,
           pinterest_connection_id: connection.id || null,
           pins_today: (pinsToday || 0) + totalPublished,
+          pins_this_week: pinsThisWeek || 0,
+          url_pins_this_week: urlPinsThisWeek || 0,
           warmup_phase,
           warmup_day: connection.account_age_days || 0,
           shadow_ban_risk: totalPublished > 10 ? "high" : totalPublished > 5 ? "medium" : "low",
