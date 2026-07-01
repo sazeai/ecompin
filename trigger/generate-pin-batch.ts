@@ -3,10 +3,25 @@ import { createAdminClient } from "@/utils/supabase/admin"
 import { putR2Object } from "@/lib/r2"
 import { GoogleGenAI } from "@google/genai"
 import { fal } from "@fal-ai/client"
-import { generateUniqueAngle, normalizeAestheticTag, AESTHETIC_DEFINITIONS } from "@/lib/context-matrix"
-import { resolveProductShowcase, pickShowcaseForPin, isDigitalProduct } from "@/lib/product-showcase"
-import { validatePrompt } from "@/lib/prompt-critic"
+import {
+  normalizeAestheticTag,
+  pickAestheticForPin,
+  aestheticIndexForProduct,
+  AESTHETIC_DEFINITIONS,
+} from "@/lib/context-matrix"
+import { isDigitalProduct } from "@/lib/product-showcase"
+import {
+  buildScenePrompt,
+  buildImagePrompt,
+  buildAngleText,
+  parseSceneFields,
+  SCENE_RESPONSE_SCHEMA,
+  AESTHETIC_STYLE_ANCHORS,
+  type SceneFields,
+} from "@/lib/scene-prompt"
+import { validatePrompt, rewritePrompt } from "@/lib/prompt-critic"
 import { adminHasCredits, adminDeductCredits } from "@/lib/credits"
+import { generateEmbedding } from "@/lib/gemini-embedding"
 
 const ai = new GoogleGenAI({ apiKey: process.env.MYGEMINI_API_KEY })
 fal.config({ credentials: process.env.FAL_KEY || "" })
@@ -21,6 +36,139 @@ function shuffleArray<T>(array: T[]): T[] {
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]]
   }
   return newArray
+}
+
+/**
+ * Single-pass scene planner.
+ *
+ * Replaces the old three-stage Showcase + Angle + Art Director pipeline with:
+ *   1. pickAestheticForPin (free, no API)
+ *   2. ONE Gemini call that returns structured scene fields + SEO copy
+ *   3. ONE embedding call for dedup
+ *   4. Deterministic prompt build (no LLM)
+ *   5. Critic pre-flight (rule-based, no LLM); deterministic rewrite on fail
+ *
+ * The image is passed in once. The LLM is called once. The result is ready for fal.ai.
+ */
+async function planScene(args: {
+  supabase: any
+  product: { id: string; title: string; description?: string }
+  productImageBase64: string | null
+  productImageMimeType: string | null
+  brand: { id: string; user_id: string; aesthetic_boundaries: string[] }
+  pastAngles: string[]
+  prodPins: any[]
+  aestheticWeights?: Record<string, number>
+  forceAestheticTag?: string
+}): Promise<{
+  fields: SceneFields
+  imagePrompt: string
+  angleText: string
+  embedding: number[]
+  pickedAesthetic: { tag: string; definition: string; styleAnchor: string }
+  targetAngle: string
+} | null> {
+  const prodPinCount = args.prodPins.length
+  const indexKey = args.forceAestheticTag
+    ? 0
+    : aestheticIndexForProduct(args.product.id, prodPinCount)
+
+  const pickedAesthetic = args.forceAestheticTag
+    ? {
+        tag: args.forceAestheticTag,
+        definition: AESTHETIC_DEFINITIONS[args.forceAestheticTag] || args.forceAestheticTag,
+        styleAnchor: AESTHETIC_STYLE_ANCHORS[args.forceAestheticTag] || "",
+      }
+    : (() => {
+        const p = pickAestheticForPin(args.brand.aesthetic_boundaries || [], indexKey, args.aestheticWeights)
+        return { ...p, styleAnchor: AESTHETIC_STYLE_ANCHORS[p.tag] || "" }
+      })()
+
+  // ONE Gemini call. Returns structured fields + SEO copy.
+  const promptText = buildScenePrompt({
+    title: args.product.title,
+    description: args.product.description,
+    aestheticTag: pickedAesthetic.tag,
+    aestheticDefinition: pickedAesthetic.definition,
+    pastAngles: args.pastAngles,
+  })
+
+  const promptParts: any[] = [{ text: promptText }]
+  if (args.productImageBase64 && args.productImageMimeType) {
+    promptParts.push({
+      inlineData: { data: args.productImageBase64, mimeType: args.productImageMimeType },
+    })
+  }
+
+  let fields: SceneFields | null = null
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: promptParts,
+      config: {
+        temperature: 0.6,
+        responseMimeType: "application/json",
+        responseSchema: SCENE_RESPONSE_SCHEMA,
+      },
+    })
+    fields = parseSceneFields(JSON.parse(response.text?.trim() || "{}"))
+  } catch (err) {
+    logger.error(`Scene plan call failed for ${args.product.title}: ${(err as Error).message}`)
+    return null
+  }
+
+  if (!fields) {
+    logger.error(`Scene plan returned malformed fields for ${args.product.title}`)
+    return null
+  }
+
+  // Deterministic prompt build from the structured fields.
+  let imagePrompt = buildImagePrompt(fields, pickedAesthetic)
+  let workingFields = fields
+
+  // Critic pre-flight. Rule-based. NO LLM retry.
+  const criticContext = {
+    physicalScale: fields.physicalScale,
+    presentationMode: fields.presentationMode,
+    forbiddenContexts: fields.forbiddenContexts,
+    isKidsProduct: /\b(kid|baby|nursery|toddler|infant|newborn|playmat|teether|onesie)\b/i.test(
+      `${args.product.title} ${args.product.description || ""}`,
+    ),
+    isWeddingProduct: /\b(wax seal|groomsmen|bridesmaid|wedding favor|place card|table number|wedding|bridal|engagement|proposal)\b/i.test(
+      `${args.product.title} ${args.product.description || ""}`,
+    ),
+    isWallArtProduct: /\b(wall art|art print|poster|canvas print|framed art|gallery print|typography print|nursery print)\b/i.test(
+      `${args.product.title} ${args.product.description || ""}`,
+    ),
+  }
+  const criticResult = validatePrompt(imagePrompt, criticContext)
+  if (!criticResult.valid) {
+    logger.warn(`Critic flagged: ${criticResult.issues.join("; ")} — applying deterministic rewrite`)
+    const rewritten = rewritePrompt(imagePrompt, criticResult.issues, fields, pickedAesthetic)
+    imagePrompt = rewritten.prompt
+    workingFields = rewritten.correctedFields
+  }
+
+  // ONE embedding for dedup. No retry loop.
+  const angleText = buildAngleText(workingFields)
+  let embedding: number[] = []
+  try {
+    embedding = await generateEmbedding(angleText)
+  } catch (err) {
+    logger.warn(`Embedding failed for ${args.product.title}, continuing without dedup: ${(err as Error).message}`)
+  }
+
+  // The target_angle stored on pins is the human-readable scene+lighting phrase.
+  const targetAngle = angleText
+
+  return {
+    fields: workingFields,
+    imagePrompt,
+    angleText,
+    embedding,
+    pickedAesthetic,
+    targetAngle,
+  }
 }
 
 /**
@@ -207,32 +355,18 @@ export const generatePinBatch = schedules.task({
               logger.warn(`Failed to fetch product image for multimodal context`)
             }
 
-            // Stage 1: Product Showcase Resolver — returns ALL viable presentation modes
-            logger.info(`Resolving showcase strategy for: ${product.title}`)
-            const showcaseAnalysis = await resolveProductShowcase(
-              { title: product.title, description: product.description },
-              productImageBase64,
-              productImageMimeType,
-              product.tags,
-            )
-            logger.info(`Showcase analysis: ${showcaseAnalysis.viableModes.length} viable modes for "${showcaseAnalysis.productType}"`)
-
-            // Pick one mode by rotating through viable modes using per-product pin count
-            // Pin 0 → mode[0], Pin 1 → mode[1], Pin 2 → mode[2], Pin 3 → wraps to mode[0] with fresh scene
+            // Compute per-product pin count once — used by aesthetic rotation and dedup.
             const prodPins = (userPins || []).filter((p: any) => p.product_id === product.id)
-            const showcase = pickShowcaseForPin(showcaseAnalysis, prodPins.length)
-            logger.info(`Picked showcase: ${showcase.presentationMode} | ${showcase.heroAction} | ${showcase.cameraAngle}`)
 
-            // Stage 2: Generate unique Context Matrix angle (Semantic De-Duplication)
-            // Showcase strategy is passed as locked constraints.
-            // Pass recent past angles across ALL products to ensure brand-level variety
+            // Past scene angles for semantic dedup (most recent first, across all products
+            // so we don't repeat the same room/lighting combo for any product).
             const pastAngles = (userPins || [])
               .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
               .map((p: any) => p.target_angle)
               .filter(Boolean)
 
-            // Fetch learned aesthetic weights from the feedback loop (aesthetic-optimizer.ts)
-            // These weights bias selection toward aesthetics with higher CTR
+            // Fetch learned aesthetic weights from the feedback loop (aesthetic-optimizer.ts).
+            // These weights bias selection toward aesthetics with higher CTR.
             let aestheticWeights: Record<string, number> | undefined
             try {
               const { data: weightRows } = await supabase
@@ -255,95 +389,28 @@ export const generatePinBatch = schedules.task({
               // No weights yet (cold start) — pickAestheticForPin falls back to round-robin
             }
 
-            const { angle: targetAngle, embedding: angleEmbedding, pickedAesthetic } = await generateUniqueAngle(
-              { id: product.id, title: product.title, description: product.description },
-              brand.aesthetic_boundaries,
+            // ─── Stage: Single-pass scene plan ───────────────────────────
+            // ONE Gemini call replaces the old Showcase + Angle + Art Director + SEO copy chain.
+            // The image is sent in once, the structured fields come back, the fal.ai prompt is
+            // built deterministically from those fields. Critic runs as a pre-flight rule check.
+            logger.info(`Planning scene for: ${product.title}`)
+            const plan = await planScene({
+              supabase,
+              product: { id: product.id, title: product.title, description: product.description },
+              productImageBase64,
+              productImageMimeType,
+              brand: { id: brand.id, user_id: brand.user_id, aesthetic_boundaries: brand.aesthetic_boundaries || [] },
               pastAngles,
-              showcase,
-              prodPins.length,  // Per-product pin count ensures rotation for THIS product
+              prodPins,
               aestheticWeights,
-            )
-            logger.info(`Selected semantic angle: "${targetAngle}" | Aesthetic: "${pickedAesthetic.tag}"`)
-
-            const authenticHandmadeMode = pickedAesthetic.tag === AUTHENTIC_HANDMADE_TAG
-
-            // Stage 3: Art Director — writes fal.ai prompt using two-tier architecture
-            // Tier 1: ALL constraints as reasoning context for Gemini
-            // Tier 2: Output rules demanding positive-only visual scene description
-
-            const artDirectorPrompt = `You are an expert product photography Art Director. Your job is to write a single, coherent scene description for fal.ai image editing. The source product image will be composited into the scene you describe.
-
-═══ CREATIVE CONTEXT (use these to inform your choices — do NOT copy them into the output) ═══
-
-PRODUCT: ${showcase.productAppearance}
-FAMILY: ${showcase.productFamily}
-PRODUCT TYPE: ${showcase.productType}
-SHOT: ${showcase.presentationMode}, ${showcase.heroAction}
-CAMERA: ${showcase.cameraAngle}
-SETTING: ${showcase.naturalEnvironment}
-SCENE SCOPE: ${showcase.sceneScope}
-SCALE RULE: ${showcase.scaleGuidance}
-SCENE CONCEPT: ${targetAngle}
-STYLE: ${pickedAesthetic.tag} — ${pickedAesthetic.definition}
-
-═══ OUTPUT RULES (follow these exactly) ═══
-
-Write a single flowing scene description, max 80 words. Rules:
-- Start with the product: what it is, how it appears, what it's doing in the scene
-- Describe ONLY what the camera will physically see: surfaces, materials, light, atmosphere
-- The product must keep its exact original colors, materials, shape, quantity, and design from the source image
-- Apply the style's lighting and color palette to the ENVIRONMENT only, not the product itself
-- No meta-instructions ("do not", "avoid", "ensure", "make sure")
-- No lists of props to include or exclude which is not necessary to the core scene concept of the product niche itself
-- No references to "the viewer", "the camera", "the model" as abstract concepts
-- End with: "${authenticHandmadeMode ? 'authentic product photo, natural window light, slight grain, 8k' : 'editorial product photography, soft natural light, 8k'}"
-
-Return ONLY JSON: { "imagePrompt": "..." }`
-
-            // Reuse product image fetched earlier for Gemini Art Director multimodal context
-            const imagePart = productImageBase64 && productImageMimeType
-              ? { inlineData: { data: productImageBase64, mimeType: productImageMimeType } }
-              : null
-
-            const promptParts: any[] = [{ text: artDirectorPrompt }]
-            if (imagePart) promptParts.push(imagePart)
-
-            const planResponse = await ai.models.generateContent({
-              model: 'gemini-2.5-flash',
-              contents: promptParts,
-              config: { temperature: 0.7, responseMimeType: "application/json" }
             })
-
-            const plan = JSON.parse(planResponse.text?.trim() || '{}')
-            let dynamicImagePrompt = plan.imagePrompt || `Aesthetic lifestyle shot of ${product.title}, photorealistic 8k`
-
-            // Prompt Critic — validate before sending to fal.ai
-            const criticResult = validatePrompt(dynamicImagePrompt, showcase)
-            if (!criticResult.valid) {
-              logger.warn(`Prompt critic flagged issues: ${criticResult.issues.join("; ")}`)
-              // Retry Art Director with critic feedback (up to 2x)
-              for (let retry = 0; retry < 2; retry++) {
-                const retryPrompt = `${artDirectorPrompt}\n\nCRITICAL CORRECTIONS — your previous prompt had these issues:\n${criticResult.issues.map(i => `- ${i}`).join("\n")}\nFix these issues in the new prompt.`
-                const retryParts: any[] = [{ text: retryPrompt }]
-                if (imagePart) retryParts.push(imagePart)
-
-                const retryResponse = await ai.models.generateContent({
-                  model: 'gemini-2.5-flash',
-                  contents: retryParts,
-                  config: { temperature: 0.5, responseMimeType: "application/json" }
-                })
-                const retryPlan = JSON.parse(retryResponse.text?.trim() || '{}')
-                const retryPromptText = retryPlan.imagePrompt || dynamicImagePrompt
-                const retryCritic = validatePrompt(retryPromptText, showcase)
-                if (retryCritic.valid) {
-                  dynamicImagePrompt = retryPromptText
-                  logger.info(`Prompt critic passed on retry ${retry + 1}`)
-                  break
-                }
-                logger.warn(`Prompt critic retry ${retry + 1} still has issues: ${retryCritic.issues.join("; ")}`)
-              }
+            if (!plan) {
+              logger.error(`Scene planning failed for ${product.title} — skipping`)
+              continue
             }
 
+            const { imagePrompt: dynamicImagePrompt, targetAngle, embedding: angleEmbedding, pickedAesthetic, fields: sceneFields } = plan
+            logger.info(`Picked aesthetic: "${pickedAesthetic.tag}" | Angle: "${targetAngle}"`)
             logger.info(`Art Director Prompt: ${dynamicImagePrompt}`)
 
             // Credit gate: verify the user has at least 1 credit before spending API budget
@@ -421,67 +488,15 @@ Return ONLY JSON: { "imagePrompt": "..." }`
               generated_image_r2_key: rawR2Key
             }).eq("id", pinId)
 
-            // Step 2: Generate premium Pinterest SEO copy (title + description) — ALL modes
-            // The metadata is now the PRIMARY driver of discovery for organic pins.
-            const copyRes = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
-              contents: [{
-                text: `You write Pinterest pin titles and descriptions that rank in Pinterest search and drive clicks to product pages.
-
-Product name: "${product.title}"
-${product.description ? `Product details: "${product.description}"` : ''}
-Creative angle for this pin: "${targetAngle}"
-
-Pinterest SEO rules you MUST follow:
-- Pinterest extracts "annotations" (1-6 word keyword phrases) from pin titles and descriptions, then scores relevance
-- Titles with specific, searchable terms outperform generic aesthetic language
-- Users search Pinterest like Google: "peanut butter jar gift set", "face serum for acne", "wooden kids chair"
-- The title must sound like something a real person would type into Pinterest search
-
-Generate:
-
-1. PIN TITLE (max 100 chars):
-   - Lead with the most specific, searchable product term
-   - Include 1-2 descriptive modifiers real shoppers would search for (material, use-case, benefit, occasion)
-   - Make it read naturally — not keyword-stuffed
-   - NEVER use generic filler like "Aesthetic", "Lifestyle", "Home Decor Finds", "Essential", "Collection"
-   - NEVER use em-dashes (—) or en-dashes (–) to bolt on generic suffixes
-   - Good: "Pintola Peanut Butter Jar — Perfect Protein-Packed Snack for Gym Days"
-   - Good: "Lashika Anti-Acne Face Serum with Niacinamide for Clear Skin"
-   - Good: "Handmade Terrazzo Kids Chair for Sunlit Nursery Rooms"
-   - Bad: "Aesthetic Lifestyle: Pintola Stone Garden — Minimalist Home Decor" (generic filler)
-   - Bad: "Sun-Dappled Aesthetic: Pintola Jar & Roasted Peanuts" (describes the photo, not the product)
-
-2. PIN DESCRIPTION (150-300 chars):
-   - Open with what the product IS and who it's for
-   - Include 2-3 natural long-tail keyword phrases shoppers would search
-   - Mention a specific benefit, ingredient, material, or use-case
-   - End with a single call-to-action phrase: "Shop now", "Get yours", "See more", "Save for later"
-   - NEVER use hashtags
-   - Write like a product copywriter, not a poet
-
-Return ONLY valid JSON: { "seo_title": "...", "seo_description": "..." }`
-              }],
-              config: {
-                temperature: 0.6,
-                responseMimeType: "application/json",
-              }
-            })
-
-            let pinTitle = product.title
-            let pinDescription = `Discover ${product.title}`
-            try {
-              const seoData = JSON.parse(copyRes.text?.trim() || '{}')
-              if (seoData.seo_title) pinTitle = seoData.seo_title.slice(0, 100)
-              if (seoData.seo_description) pinDescription = seoData.seo_description.slice(0, 500)
-            } catch {
-              logger.warn(`SEO copy parse failed for ${product.title}, using Art Director title`)
-            }
+            // SEO copy is now produced in the same single Gemini call as the scene plan
+            // (see planScene → SCENE_RESPONSE_SCHEMA → seoTitle + seoDescription).
+            const pinTitle = (sceneFields && sceneFields.seoTitle) || product.title
+            const pinDescription = (sceneFields && sceneFields.seoDescription) || `Discover ${product.title}`
 
             // Save SEO title + description NOW, before render — so they survive render failures
             await supabase.from("pins").update({
-              pin_title: pinTitle,
-              pin_description: pinDescription,
+              pin_title: pinTitle.slice(0, 100),
+              pin_description: pinDescription.slice(0, 500),
             }).eq("id", pinId)
             logger.info(`SEO data saved for pin ${pinId}: "${pinTitle}"`)
 
@@ -604,167 +619,129 @@ Return ONLY valid JSON: { "seo_title": "...", "seo_description": "..." }`
                       altTag = normalizeAestheticTag(altBoundaries[Math.floor(Math.random() * altBoundaries.length)])
                     }
 
-                    const altDefinition = AESTHETIC_DEFINITIONS[altTag] || altTag
-
-                    // Generate B variant with the alternate aesthetic
-                    const { angle: altAngle, embedding: altEmbedding } = await generateUniqueAngle(
-                      { id: product.id, title: product.title, description: product.description },
-                      [altTag], // Force this specific aesthetic
-                      [...pastAngles, targetAngle], // Include the A variant to ensure B is different
-                      showcase,
-                      prodPins.length + 1,
-                    )
-
                     // Credit gate for the B variant
                     const { hasCredits: hasCreditForB } = await adminHasCredits(brand.user_id, 1)
                     if (hasCreditForB) {
-                      // Art Director for B variant
-                      const artDirectorPromptB = `You are an expert product photography Art Director. Your job is to write a single, coherent scene description for fal.ai image editing. The source product image will be composited into the scene you describe.
-
-═══ CREATIVE CONTEXT ═══
-
-PRODUCT: ${showcase?.productAppearance || product.title}
-SHOT: ${showcase?.presentationMode || 'hero'}, ${showcase?.heroAction || 'displayed'}
-CAMERA: ${showcase?.cameraAngle || 'eye-level'}
-SCENE CONCEPT: ${altAngle}
-STYLE: ${altTag} — ${altDefinition}
-
-═══ OUTPUT RULES ═══
-
-Write a single flowing scene description, max 80 words. Rules:
-- Start with the product: what it is, how it appears, what it's doing in the scene
-- Describe ONLY what the camera will physically see: surfaces, materials, light, atmosphere
-- The product must keep its exact original colors, materials, shape from the source image
-- Apply the style's lighting and color palette to the ENVIRONMENT only
-- No meta-instructions, no lists, no references to "the viewer"
-- End with: "editorial product photography, soft natural light, 8k"
-
-Return ONLY JSON: { "imagePrompt": "..." }`
-
-                      const bPromptParts: any[] = [{ text: artDirectorPromptB }]
-                      if (productImageBase64 && productImageMimeType) {
-                        bPromptParts.push({ inlineData: { data: productImageBase64, mimeType: productImageMimeType } })
-                      }
-
-                      const bPlanResponse = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: bPromptParts,
-                        config: { temperature: 0.7, responseMimeType: "application/json" }
-                      })
-                      const bPlan = JSON.parse(bPlanResponse.text?.trim() || '{}')
-                      const bImagePrompt = bPlan.imagePrompt || `Aesthetic lifestyle shot of ${product.title}, photorealistic 8k`
-
-                      // Generate B image via fal.ai
-                      const bResult: any = await fal.subscribe("fal-ai/flux-2/edit", {
-                        input: {
-                          prompt: bImagePrompt,
-                          num_inference_steps: 50,
-                          guidance_scale: 3.5,
-                          image_size: { width: 1000, height: 1500 },
-                          num_images: 1,
-                          enable_safety_checker: true,
-                          acceleration: "regular",
-                          output_format: "png",
-                          image_urls: [sourceImageUrl],
-                        },
-                        logs: true,
-                        onQueueUpdate: (update) => {
-                          if (update.status === "IN_PROGRESS") {
-                            update.logs.map((log) => log.message).forEach(console.log)
-                          }
-                        },
+                      // B variant uses the same single-pass planner with the alt aesthetic forced.
+                      // Including the A variant's angle in pastAngles forces the B scene to be different.
+                      const bPlan = await planScene({
+                        supabase,
+                        product: { id: product.id, title: product.title, description: product.description },
+                        productImageBase64,
+                        productImageMimeType,
+                        brand: { id: brand.id, user_id: brand.user_id, aesthetic_boundaries: [altTag] },
+                        pastAngles: [...pastAngles, targetAngle],
+                        prodPins: [...prodPins, { id: "_ab_marker" }],
+                        aestheticWeights,
+                        forceAestheticTag: altTag,
                       })
 
-                      const bFalImageUrl = bResult.data?.images?.[0]?.url
-                      if (bFalImageUrl) {
-                        // Save B pin to DB
-                        const { data: pinB } = await supabase.from('pins').insert({
-                          user_id: brand.user_id,
-                          product_id: product.id,
-                          brand_settings_id: brand.id,
-                          art_director_prompt: bImagePrompt,
-                          target_angle: altAngle,
-                          angle_embedding: altEmbedding ? `[${Array.from(altEmbedding).join(",")}]` : null,
-                          template_id: 'template-5',
-                          pin_title: product.title,
-                          aesthetic_tag: altTag,
-                          status: 'generating',
-                          is_mood_board: false,
-                        }).select('id').single()
+                      if (!bPlan) {
+                        logger.warn(`B variant scene planning failed for ${product.title} — skipping A/B`)
+                      } else {
+                        const bImagePrompt = bPlan.imagePrompt
+                        const bAltAngle = bPlan.targetAngle
+                        const bAltEmbedding = bPlan.embedding
 
-                        if (pinB?.id) {
-                          // Upload B image to R2
-                          const bImgRes = await fetch(bFalImageUrl)
-                          const bImgBuffer = Buffer.from(await bImgRes.arrayBuffer())
-                          const bRawR2Key = `pin-images/${brand.user_id}/${pinB.id}-raw.png`
-                          await putR2Object(bRawR2Key, bImgBuffer, "image/png")
-                          const bRawImageUrl = r2Domain ? `${r2Domain}/${bRawR2Key}` : bRawR2Key
-
-                          // Handle render (same logic as main pin)
-                          const shouldRenderB = brand.show_brand_url !== false && !!brand.store_url
-                          let bFinalUrl = bRawImageUrl
-                          let bFinalKey = bRawR2Key
-
-                          if (shouldRenderB) {
-                            let appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000').replace(/\/$/, '')
-                            if (!appUrl.startsWith('http')) appUrl = `https://${appUrl}`
-
-                            const renderRes = await fetch(`${appUrl}/api/render-pin`, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ imageUrl: bRawImageUrl, storeUrl: brand.store_url || "" }),
-                            })
-                            if (renderRes.ok) {
-                              const renderedBuffer = Buffer.from(await renderRes.arrayBuffer())
-                              if (renderedBuffer.length >= 10000) {
-                                const renderedKey = `pin-images/${brand.user_id}/${pinB.id}-final.png`
-                                await putR2Object(renderedKey, renderedBuffer, "image/png")
-                                bFinalUrl = r2Domain ? `${r2Domain}/${renderedKey}` : renderedKey
-                                bFinalKey = renderedKey
-                              }
+                        // Generate B image via fal.ai
+                        const bResult: any = await fal.subscribe("fal-ai/flux-2/edit", {
+                          input: {
+                            prompt: bImagePrompt,
+                            num_inference_steps: 50,
+                            guidance_scale: 3.5,
+                            image_size: { width: 1000, height: 1500 },
+                            num_images: 1,
+                            enable_safety_checker: true,
+                            acceleration: "regular",
+                            output_format: "png",
+                            image_urls: [sourceImageUrl],
+                          },
+                          logs: true,
+                          onQueueUpdate: (update) => {
+                            if (update.status === "IN_PROGRESS") {
+                              update.logs.map((log) => log.message).forEach(console.log)
                             }
-                          }
+                          },
+                        })
 
-                          await supabase.from("pins").update({
-                            generated_image_url: bRawImageUrl,
-                            generated_image_r2_key: bRawR2Key,
-                            rendered_image_url: bFinalUrl,
-                            rendered_image_r2_key: bFinalKey,
-                            status: "pending_approval",
-                          }).eq("id", pinB.id)
-
-                          // Generate SEO copy for B variant
-                          const bCopyRes = await ai.models.generateContent({
-                            model: "gemini-2.5-flash",
-                            contents: [{ text: `Write a Pinterest SEO title (max 100 chars) and description (150-300 chars) for: "${product.title}". Creative angle: "${altAngle}". Return JSON: { "seo_title": "...", "seo_description": "..." }` }],
-                            config: { temperature: 0.6, responseMimeType: "application/json" }
-                          })
-                          try {
-                            const bSeo = JSON.parse(bCopyRes.text?.trim() || '{}')
-                            if (bSeo.seo_title) {
-                              await supabase.from("pins").update({
-                                pin_title: bSeo.seo_title.slice(0, 100),
-                                pin_description: (bSeo.seo_description || '').slice(0, 500),
-                              }).eq("id", pinB.id)
-                            }
-                          } catch { /* SEO copy parse failure is non-fatal */ }
-
-                          // Create the experiment record
-                          await supabase.from("ab_experiments").insert({
+                        const bFalImageUrl = bResult.data?.images?.[0]?.url
+                        if (bFalImageUrl) {
+                          // Save B pin to DB
+                          const { data: pinB } = await supabase.from('pins').insert({
                             user_id: brand.user_id,
                             product_id: product.id,
-                            pin_a_id: pinId,
-                            pin_b_id: pinB.id,
-                            aesthetic_a: pickedAesthetic.tag,
-                            aesthetic_b: altTag,
-                            status: "running",
-                          })
+                            brand_settings_id: brand.id,
+                            art_director_prompt: bImagePrompt,
+                            target_angle: bAltAngle,
+                            angle_embedding: bAltEmbedding && bAltEmbedding.length > 0 ? `[${Array.from(bAltEmbedding).join(",")}]` : null,
+                            template_id: 'template-5',
+                            pin_title: (bPlan.fields && bPlan.fields.seoTitle) || product.title,
+                            aesthetic_tag: altTag,
+                            status: 'generating',
+                            is_mood_board: false,
+                          }).select('id').single()
 
-                          // Deduct credit for B variant
-                          await adminDeductCredits(brand.user_id, 1, `A/B test pin: ${pinB.id}`)
+                          if (pinB?.id) {
+                            // Upload B image to R2
+                            const bImgRes = await fetch(bFalImageUrl)
+                            const bImgBuffer = Buffer.from(await bImgRes.arrayBuffer())
+                            const bRawR2Key = `pin-images/${brand.user_id}/${pinB.id}-raw.png`
+                            await putR2Object(bRawR2Key, bImgBuffer, "image/png")
+                            const bRawImageUrl = r2Domain ? `${r2Domain}/${bRawR2Key}` : bRawR2Key
 
-                          totalGenerated++
-                          logger.info(`🧪 A/B experiment created: Pin A (${pickedAesthetic.tag}) vs Pin B (${altTag}) for "${product.title}"`)
+                            // Handle render (same logic as main pin)
+                            const shouldRenderB = brand.show_brand_url !== false && !!brand.store_url
+                            let bFinalUrl = bRawImageUrl
+                            let bFinalKey = bRawR2Key
+
+                            if (shouldRenderB) {
+                              let appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000').replace(/\/$/, '')
+                              if (!appUrl.startsWith('http')) appUrl = `https://${appUrl}`
+
+                              const renderRes = await fetch(`${appUrl}/api/render-pin`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ imageUrl: bRawImageUrl, storeUrl: brand.store_url || "" }),
+                              })
+                              if (renderRes.ok) {
+                                const renderedBuffer = Buffer.from(await renderRes.arrayBuffer())
+                                if (renderedBuffer.length >= 10000) {
+                                  const renderedKey = `pin-images/${brand.user_id}/${pinB.id}-final.png`
+                                  await putR2Object(renderedKey, renderedBuffer, "image/png")
+                                  bFinalUrl = r2Domain ? `${r2Domain}/${renderedKey}` : renderedKey
+                                  bFinalKey = renderedKey
+                                }
+                              }
+                            }
+
+                            await supabase.from("pins").update({
+                              generated_image_url: bRawImageUrl,
+                              generated_image_r2_key: bRawR2Key,
+                              rendered_image_url: bFinalUrl,
+                              rendered_image_r2_key: bFinalKey,
+                              status: "pending_approval",
+                              // SEO copy was produced in the same planScene call — save it here.
+                              pin_title: ((bPlan.fields && bPlan.fields.seoTitle) || product.title).slice(0, 100),
+                              pin_description: ((bPlan.fields && bPlan.fields.seoDescription) || `Discover ${product.title}`).slice(0, 500),
+                            }).eq("id", pinB.id)
+
+                            // Create the experiment record
+                            await supabase.from("ab_experiments").insert({
+                              user_id: brand.user_id,
+                              product_id: product.id,
+                              pin_a_id: pinId,
+                              pin_b_id: pinB.id,
+                              aesthetic_a: pickedAesthetic.tag,
+                              aesthetic_b: altTag,
+                              status: "running",
+                            })
+
+                            // Deduct credit for B variant
+                            await adminDeductCredits(brand.user_id, 1, `A/B test pin: ${pinB.id}`)
+
+                            totalGenerated++
+                            logger.info(`🧪 A/B experiment created: Pin A (${pickedAesthetic.tag}) vs Pin B (${altTag}) for "${product.title}"`)
+                          }
                         }
                       }
                     } else {
