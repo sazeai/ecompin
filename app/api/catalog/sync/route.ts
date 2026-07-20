@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { tasks } from "@trigger.dev/sdk/v3"
 import { createClient } from "@/utils/supabase/server"
 import { normalizeStoreUrl, syncStoreCatalog } from "@/lib/catalog"
-import type { catalogStoreSync } from "@/trigger/sync-catalog-store"
 
 export const maxDuration = 60
 
@@ -139,9 +138,10 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Prefer background job; fall back to inline if Trigger is unavailable
+    // Prefer background job; fall back to inline if Trigger is unavailable.
+    // Reuses existing schedule slot shopify-product-sync (no new Trigger schedules).
     try {
-      await tasks.trigger<typeof catalogStoreSync>("catalog-store-sync", {
+      await tasks.trigger("shopify-product-sync", {
         userId: user.id,
         catalogStoreId: storeId!,
         storeUrl: canonicalUrl,

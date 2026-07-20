@@ -1,208 +1,143 @@
 import { schedules, logger } from "@trigger.dev/sdk/v3"
 import { createAdminClient } from "@/utils/supabase/admin"
-import { putR2Object } from "@/lib/r2"
-import { decrypt } from "@/utils/encryption"
+import { syncStoreCatalog } from "@/lib/catalog"
 
 /**
- * EcomPin — Shopify Product Sync (No-OAuth)
- * 
- * background auto-sync utilizing Custom App (Admin API) Key.
- * Fetches products, downloads images, and deduplicates by Handle.
+ * Payload when triggered on-demand from /api/catalog/sync.
+ * Scheduled cron runs have Trigger schedule metadata instead (no catalogStoreId).
+ */
+export interface ProductSyncPayload {
+  userId?: string
+  catalogStoreId?: string
+  storeUrl?: string
+  brandSettingsId?: string | null
+  triggerSource?: "manual" | "scheduled" | "onboarding"
+  forceFullCrawl?: boolean
+  maxProductPages?: number
+}
+
+function isOnDemandPayload(payload: unknown): payload is Required<
+  Pick<ProductSyncPayload, "userId" | "catalogStoreId" | "storeUrl">
+> &
+  ProductSyncPayload {
+  if (!payload || typeof payload !== "object") return false
+  const p = payload as ProductSyncPayload
+  return Boolean(p.userId && p.catalogStoreId && p.storeUrl)
+}
+
+/**
+ * EcomPin — Product Catalog Sync
+ *
+ * Reuses the existing schedule slot `shopify-product-sync` (do not add new schedules —
+ * free Trigger.dev plan is capped at 10).
+ *
+ * - Cron: re-sync all registered catalog_stores via public crawl engine
+ * - On-demand: tasks.trigger("shopify-product-sync", { userId, catalogStoreId, storeUrl, ... })
  */
 export const shopifyProductSync = schedules.task({
   id: "shopify-product-sync",
-  cron: "0 2 * * *", // run daily at 2AM by default if configured
-  run: async () => {
-    logger.info(`🛍️ Global Shopify sync started`)
-
+  // 12h cadence — same schedule id as before (was daily 2AM Admin API sync)
+  cron: "0 */12 * * *",
+  run: async (payload: ProductSyncPayload | Record<string, unknown>) => {
     const supabase = createAdminClient() as any
 
-    // Fetch all connections with custom app client credentials
-    const { data: connections, error: connErr } = await supabase
-      .from("shopify_connections")
-      .select("user_id, store_domain, shopify_client_id, shopify_client_secret")
-      .not("shopify_client_secret", "is", null)
-      .not("store_domain", "is", null)
-      .eq("is_default", true)
+    // ── On-demand single-store sync (URL import from app) ───────────────────
+    if (isOnDemandPayload(payload)) {
+      logger.info("Catalog store sync started (on-demand)", {
+        userId: payload.userId,
+        catalogStoreId: payload.catalogStoreId,
+        storeUrl: payload.storeUrl,
+        triggerSource: payload.triggerSource || "manual",
+      })
 
-    if (connErr || !connections || connections.length === 0) {
-      logger.info(`No users configured for Shopify auto-sync.`)
-      return { result: "No users configured" }
+      const report = await syncStoreCatalog(supabase, {
+        userId: payload.userId,
+        storeUrl: payload.storeUrl,
+        brandSettingsId: payload.brandSettingsId ?? null,
+        catalogStoreId: payload.catalogStoreId,
+        triggerSource: payload.triggerSource || "manual",
+        forceFullCrawl: Boolean(payload.forceFullCrawl),
+        maxProductPages: payload.maxProductPages ?? 400,
+      })
+
+      logger.info("Catalog store sync finished (on-demand)", {
+        status: report.status,
+        inserted: report.inserted,
+        updated: report.updated,
+        unchanged: report.unchanged,
+        unavailable: report.unavailable,
+        pagesFetched: report.pagesFetched,
+        extractor: report.extractorUsed,
+        shortCircuited: report.sitemapShortCircuited,
+        durationMs: report.durationMs,
+        error: report.errorMessage,
+      })
+
+      return report
     }
 
-    let usersProcessed = 0
-    let totalSyncedGlobal = 0
-    let totalSkippedGlobal = 0
+    // ── Scheduled: all catalog_stores ───────────────────────────────────────
+    logger.info("Global catalog re-sync started (shopify-product-sync)")
 
-    for (const connection of connections) {
-      const { user_id: userId, store_domain, shopify_client_id: client_id, shopify_client_secret: encrypted_secret } = connection
-      
-      let access_token: string
+    const { data: stores, error } = await supabase
+      .from("catalog_stores")
+      .select("id, user_id, canonical_url, brand_settings_id, sync_status, last_synced_at")
+      .in("sync_status", ["idle", "success", "partial", "failed", "queued"])
+      .order("last_synced_at", { ascending: true, nullsFirst: true })
+      .limit(200)
+
+    if (error) {
+      logger.error("Failed to load catalog_stores", { error: error.message })
+      return { ok: false, error: error.message }
+    }
+
+    if (!stores?.length) {
+      logger.info("No catalog stores to re-sync")
+      return { ok: true, processed: 0, succeeded: 0, failed: 0 }
+    }
+
+    let processed = 0
+    let succeeded = 0
+    let failed = 0
+
+    for (const store of stores) {
+      if (store.sync_status === "running") continue
+
       try {
-        const client_secret = decrypt(encrypted_secret)
-        
-        // Exchange Client Credentials for 24-hr access token
-        const tokenRes = await fetch(`https://${store_domain}/admin/oauth/access_token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id,
-            client_secret,
-            grant_type: 'client_credentials'
-          })
+        const report = await syncStoreCatalog(supabase, {
+          userId: store.user_id,
+          storeUrl: store.canonical_url,
+          brandSettingsId: store.brand_settings_id,
+          catalogStoreId: store.id,
+          triggerSource: "scheduled",
+          forceFullCrawl: false,
+          maxProductPages: 400,
         })
-        
-        if (!tokenRes.ok) {
-          logger.error(`Failed to generate 24hr access token for user ${userId}. Skipping...`)
-          continue
-        }
-        
-        const tokenData = await tokenRes.json()
-        access_token = tokenData.access_token
+        processed++
+        if (report.status === "failed") failed++
+        else succeeded++
+
+        logger.info("Re-synced store", {
+          storeId: store.id,
+          status: report.status,
+          shortCircuited: report.sitemapShortCircuited,
+          inserted: report.inserted,
+          updated: report.updated,
+          unavailable: report.unavailable,
+        })
       } catch (err: any) {
-        logger.error(`Encryption or Auth failure for user ${userId}: ${err.message}`)
-        continue
-      }
-      
-      const shopifyBase = `https://${store_domain}/admin/api/2024-10`
-
-      logger.info(`Syncing store: ${store_domain} for user ${userId}`)
-
-      // Get user's brand_settings_id for linking products
-      const { data: brand } = await supabase
-        .from("brand_settings")
-        .select("id")
-        .eq("user_id", userId)
-        .single()
-
-      const brandSettingsId = brand?.id || null
-
-      let pageInfo: string | null = null
-      let hasMore = true
-      let syncedForUser = 0
-      let skippedForUser = 0
-
-      while (hasMore) {
-        try {
-          const url: string = pageInfo
-            ? `${shopifyBase}/products.json?limit=50&page_info=${pageInfo}`
-            : `${shopifyBase}/products.json?limit=50&status=active`
-
-          const res: Response = await fetch(url, {
-            headers: {
-              "X-Shopify-Access-Token": access_token,
-              "Content-Type": "application/json",
-            },
-          })
-
-          if (!res.ok) {
-            const errText = await res.text()
-            throw new Error(`Shopify API error (${res.status}): ${errText}`)
-          }
-
-          const data = await res.json()
-          const products = data.products || []
-
-          for (const product of products) {
-            if (!product.handle) continue
-
-            try {
-              // Get primary image
-              const primaryImage = product.image?.src || product.images?.[0]?.src || null
-              let imageR2Key: string | null = null
-
-              // Download image to R2
-              if (primaryImage) {
-                try {
-                  const imgRes = await fetch(primaryImage)
-                  if (imgRes.ok) {
-                    const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
-                    const r2Key = `products/${userId}/${product.id}.jpg`
-                    await putR2Object(r2Key, imgBuffer, "image/jpeg", "public, max-age=31536000")
-                    imageR2Key = r2Key
-                  }
-                } catch (imgErr) {
-                  logger.warn(`Failed to sync image for product ${product.id}: ${imgErr}`)
-                }
-              }
-
-              const tags = product.tags
-                ? product.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
-                : []
-
-              if (product.product_type) {
-                tags.unshift(product.product_type)
-              }
-
-              const price = product.variants?.[0]?.price
-                ? parseFloat(product.variants[0].price)
-                : null
-
-              const r2PublicDomain = (process.env.R2_PUBLIC_DOMAIN || "").replace(/^https?:\/\//, "").replace(/\/+$/, "")
-              const imageUrl = imageR2Key && r2PublicDomain
-                ? `https://${r2PublicDomain}/${imageR2Key}`
-                : primaryImage
-
-              // Deduplicate using handle to align with CSV uploader
-              const { error: upsertError } = await supabase
-                .from("products")
-                .upsert({
-                  user_id: userId,
-                  brand_settings_id: brandSettingsId,
-                  source: "shopify",
-                  source_product_id: String(product.id),
-                  handle: product.handle,
-                  title: product.title,
-                  description: product.body_html?.replace(/<[^>]*>/g, "").substring(0, 1000) || null,
-                  price,
-                  currency: "USD",
-                  product_url: `https://${store_domain}/products/${product.handle}`,
-                  image_url: imageUrl,
-                  image_r2_key: imageR2Key,
-                  tags,
-                  is_active: product.status === "active",
-                  updated_at: new Date().toISOString(),
-                }, {
-                  onConflict: "user_id,handle",
-                  ignoreDuplicates: false,
-                })
-
-              if (upsertError) {
-                logger.warn(`Failed to upsert Shopify product ${product.handle}: ${upsertError.message}`)
-                skippedForUser++
-              } else {
-                syncedForUser++
-              }
-
-              await new Promise(r => setTimeout(r, 100))
-
-            } catch (prodErr: any) {
-              logger.error(`Error syncing product ${product.id}: ${prodErr.message}`)
-              skippedForUser++
-            }
-          }
-
-          const linkHeader: string = res.headers.get("link") || ""
-          const nextMatch: RegExpMatchArray | null = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/)
-          if (nextMatch) {
-            pageInfo = nextMatch[1]
-          } else {
-            hasMore = false
-          }
-        } catch (fetchErr: any) {
-          logger.error(`Failed to fetch from Shopify for user ${userId}: ${fetchErr.message}`)
-          hasMore = false // stop pagination loop on fetch error
-        }
+        failed++
+        processed++
+        logger.error("Re-sync failed for store", {
+          storeId: store.id,
+          error: err?.message,
+        })
       }
 
-      usersProcessed++
-      totalSyncedGlobal += syncedForUser
-      totalSkippedGlobal += skippedForUser
-      
-      logger.info(`Finished user ${userId}: ${syncedForUser} synced, ${skippedForUser} skipped`)
+      await new Promise((r) => setTimeout(r, 250))
     }
 
-    logger.info(`🛍️ Global Shopify sync complete: ${usersProcessed} users processed, ${totalSyncedGlobal} synced, ${totalSkippedGlobal} skipped`)
-    return { result: "Complete", usersProcessed, synced: totalSyncedGlobal, skipped: totalSkippedGlobal }
+    logger.info("Global catalog re-sync complete", { processed, succeeded, failed })
+    return { ok: true, processed, succeeded, failed }
   },
 })
