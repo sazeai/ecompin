@@ -57,6 +57,7 @@ export async function extractViaShopifyProductJs(
     fingerprint,
   }
 
+  // Only short-circuit when caller supplied a fingerprint (means catalog already populated).
   if (
     !opts?.forceFullCrawl &&
     opts?.previousFingerprint &&

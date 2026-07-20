@@ -154,14 +154,25 @@ export async function syncStoreCatalog(
       warnings.push("Homepage fetch failed — platform sniffed from URL only")
     }
 
+    // Only allow sitemap short-circuit when this store already has products.
+    // Empty catalogs + a cached fingerprint = permanent 0-insert loops (magneticme bug).
+    const { count: existingProductCount } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("catalog_store_id", store.id)
+
+    const hasCatalog = (existingProductCount || 0) > 0
+    const allowShortCircuit =
+      hasCatalog && !options.forceFullCrawl && Boolean(store.sitemap_fingerprint)
+
     // Run extractor fallback chain
     const extracted = await runExtractorChain({
       storeRoot: canonicalUrl,
       platform,
       homepageHtml,
-      previousFingerprint: store.sitemap_fingerprint,
+      previousFingerprint: allowShortCircuit ? store.sitemap_fingerprint : null,
       maxProductPages: options.maxProductPages,
-      forceFullCrawl: options.forceFullCrawl,
+      forceFullCrawl: options.forceFullCrawl || !hasCatalog,
       robotsSitemaps: robots.sitemaps,
     })
 
@@ -187,20 +198,66 @@ export async function syncStoreCatalog(
 
     warnings.push(...extracted.warnings)
 
-    // Sitemap short-circuit: touch last_seen, no product writes
+    // Sitemap short-circuit: ONLY when catalog already has rows.
+    // Never treat "0 products + same fingerprint" as success.
     if (extracted.sitemapShortCircuited) {
       const touchIso = new Date().toISOString()
-      await supabase
-        .from("products")
-        .update({ last_seen_at: touchIso, missing_sync_count: 0, updated_at: touchIso })
-        .eq("catalog_store_id", store.id)
-        .in("lifecycle_status", ["active", "updated"])
 
       const { count } = await supabase
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("catalog_store_id", store.id)
         .eq("is_active", true)
+
+      // Safety net: empty catalog must never short-circuit-succeed
+      if (!count || count === 0) {
+        warnings.push(
+          "Ignored sitemap short-circuit: store has 0 products — forcing full crawl next run"
+        )
+        await supabase
+          .from("catalog_stores")
+          .update({
+            sitemap_fingerprint: null,
+            sync_status: "failed",
+            last_error:
+              "Previous crawl saved a sitemap fingerprint with 0 products. Cleared; re-sync to full crawl.",
+            product_count: 0,
+          })
+          .eq("id", store.id)
+
+        if (runId) {
+          await supabase
+            .from("catalog_sync_runs")
+            .update({
+              status: "failed",
+              extractor_used: extracted.extractor,
+              products_seen: 0,
+              pages_fetched: extracted.pagesFetched,
+              sitemap_short_circuited: true,
+              error_message:
+                "Short-circuit blocked: empty catalog. Fingerprint cleared — re-run import.",
+              finished_at: touchIso,
+            })
+            .eq("id", runId)
+        }
+
+        return failedReport({
+          storeId: store.id,
+          canonicalUrl,
+          platform,
+          errorMessage:
+            "Catalog empty after short-circuit. Fingerprint cleared — click import again for a full crawl.",
+          durationMs: Date.now() - started,
+          warnings,
+          pagesFetched: extracted.pagesFetched,
+        })
+      }
+
+      await supabase
+        .from("products")
+        .update({ last_seen_at: touchIso, missing_sync_count: 0, updated_at: touchIso })
+        .eq("catalog_store_id", store.id)
+        .in("lifecycle_status", ["active", "updated"])
 
       await supabase
         .from("catalog_stores")
@@ -429,6 +486,12 @@ export async function syncStoreCatalog(
     const finishIso = new Date().toISOString()
     const sampleUrls = (extracted.sitemap?.productUrls || extracted.products.map((p) => p.productUrl)).slice(0, 20)
 
+    // Never cache a fingerprint when we wrote 0 products — that poisons future short-circuits.
+    const wroteSomething = (inserted + updated + (activeCount || 0)) > 0
+    const nextFingerprint = wroteSomething
+      ? extracted.sitemap?.fingerprint || store.sitemap_fingerprint
+      : null
+
     await supabase
       .from("catalog_stores")
       .update({
@@ -439,8 +502,7 @@ export async function syncStoreCatalog(
         product_count: activeCount || 0,
         last_extractor_used: extracted.extractor,
         sitemap_url: extracted.sitemap?.sitemapUrl || store.sitemap_url,
-        sitemap_fingerprint:
-          extracted.sitemap?.fingerprint || store.sitemap_fingerprint,
+        sitemap_fingerprint: nextFingerprint,
         sitemap_product_count:
           extracted.sitemap?.productUrls.length ?? store.sitemap_product_count,
         sitemap_urls_sample: sampleUrls,

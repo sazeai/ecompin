@@ -43,7 +43,8 @@ export async function extractViaSitemap(
     fingerprint,
   }
 
-  // Sitemap-diff short-circuit: same URL set as last successful crawl
+  // Sitemap-diff short-circuit: same URL set as last *successful product* crawl.
+  // Caller must pass previousFingerprint only when the store already has products.
   if (
     !opts?.forceFullCrawl &&
     opts?.previousFingerprint &&

@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Loader2,
   Link as LinkIcon,
+  Clock,
   RefreshCw,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -48,8 +49,8 @@ export function StepProducts() {
           Import your products
         </h2>
         <p className="mt-2 text-sm text-neutral-600">
-          Paste your store URL and EcomPin will pull your public catalog automatically.
-          CSV upload is always available as a fallback.
+          Paste your store URL and EcomPin will pull your public catalog in the background.
+          You can keep going — products will be ready by launch.
         </p>
       </div>
 
@@ -89,7 +90,7 @@ export function StepProducts() {
 
 function StoreUrlImport() {
   const [storeUrl, setStoreUrl] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [starting, setStarting] = useState(false)
   const [store, setStore] = useState<StoreStatus | null>(null)
   const [report, setReport] = useState<SyncReport | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -137,7 +138,6 @@ function StoreUrlImport() {
           clearInterval(pollRef.current)
           pollRef.current = null
         }
-        setSaving(false)
         if (s.sync_status === 'failed') {
           setError(s.last_error || 'Import failed. Try CSV upload instead.')
         }
@@ -151,7 +151,7 @@ function StoreUrlImport() {
     if (!storeUrl.trim()) return
     setError(null)
     setReport(null)
-    setSaving(true)
+    setStarting(true)
 
     try {
       const res = await fetch('/api/catalog/sync', {
@@ -169,7 +169,7 @@ function StoreUrlImport() {
         throw new Error(body.error || body.message || 'Import failed')
       }
 
-      // Inline fallback already finished
+      // Inline fallback finished immediately (rare, small stores)
       if (body.report) {
         setReport({
           inserted: body.report.inserted || 0,
@@ -190,7 +190,7 @@ function StoreUrlImport() {
         if (body.report.status === 'failed') {
           setError(body.report.errorMessage || 'Could not import products from this URL.')
         }
-        setSaving(false)
+        setStarting(false)
         return
       }
 
@@ -204,26 +204,33 @@ function StoreUrlImport() {
       })
 
       if (pollRef.current) clearInterval(pollRef.current)
-      pollRef.current = setInterval(() => pollStore(storeId), 2000)
-      // immediate poll
+      pollRef.current = setInterval(() => pollStore(storeId), 2500)
       void pollStore(storeId)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Import failed')
-      setSaving(false)
+    } finally {
+      setStarting(false)
     }
   }
 
-  const isRunning =
-    saving ||
+  const isActive =
+    starting ||
     store?.syncStatus === 'queued' ||
     store?.syncStatus === 'running'
+
+  const hasResult =
+    report &&
+    (report.inserted > 0 ||
+      report.updated > 0 ||
+      (report.unchanged || 0) > 0 ||
+      (report.productsSeen || 0) > 0)
 
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
         <p className="text-xs leading-5 text-neutral-600">
-          Works with public storefronts (Shopify, WooCommerce, Squarespace, and most custom shops).
-          No app install or API keys required. If the store blocks crawlers, use CSV.
+          Works with public storefronts (Shopify, WooCommerce, Squarespace, custom shops).
+          Import runs in the background — you can continue onboarding while we sync.
         </p>
       </div>
 
@@ -237,9 +244,9 @@ function StoreUrlImport() {
           onChange={(e) => setStoreUrl(e.target.value)}
           placeholder="https://yourstore.com or brand.myshopify.com"
           className="h-12 rounded-xl border-neutral-200 bg-white px-4"
-          disabled={isRunning}
+          disabled={isActive && !hasResult}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void handleImport()
+            if (e.key === 'Enter' && !isActive) void handleImport()
           }}
         />
       </div>
@@ -251,29 +258,37 @@ function StoreUrlImport() {
             <p className="font-medium">Import failed</p>
             <p className="mt-1">{error}</p>
             <p className="mt-2 text-xs text-red-700">
-              Switch to the CSV tab — export products from your store admin and upload them here.
+              Switch to CSV — export products from your store admin and upload them here.
             </p>
           </div>
         </div>
       )}
 
-      {isRunning && !error && (
+      {/* Background status — non-blocking */}
+      {isActive && !error && !hasResult && (
         <div className="flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4">
           <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-neutral-500" />
           <div className="text-sm text-neutral-700">
-            <p className="font-medium">Importing catalog…</p>
+            <p className="font-medium">Import started</p>
             <p className="mt-1 text-neutral-500">
-              Scanning public product pages. This usually takes under a minute for small stores.
+              We&apos;re pulling your catalog in the background. Large stores can take a few
+              minutes — you can safely continue to the next step.
             </p>
+            {store?.productCount != null && store.productCount > 0 && (
+              <p className="mt-1 text-xs text-neutral-500">
+                {store.productCount} products found so far…
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {report && !error && (report.inserted > 0 || report.updated > 0 || (report.unchanged || 0) > 0) && (
+      {/* Finished */}
+      {hasResult && !error && (
         <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
           <div className="text-sm text-green-800">
-            <p className="font-medium">Catalog imported</p>
+            <p className="font-medium">Catalog synced</p>
             <p className="mt-1">
               {report.inserted} new, {report.updated} updated
               {typeof report.unchanged === 'number' ? `, ${report.unchanged} unchanged` : ''}
@@ -289,38 +304,32 @@ function StoreUrlImport() {
         </div>
       )}
 
-      {report && !error && report.inserted === 0 && report.updated === 0 && !(report.unchanged && report.unchanged > 0) && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-          <div className="text-sm text-amber-900">
-            <p className="font-medium">No products saved</p>
-            <p className="mt-1">
-              Found {report.productsSeen ?? 0} products but none were written.
-              Try Re-sync, or upload a CSV export.
-            </p>
-          </div>
-        </div>
-      )}
-
       <Button
         onClick={handleImport}
-        disabled={isRunning || !storeUrl.trim()}
+        disabled={isActive && !hasResult}
         className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-medium text-white hover:bg-neutral-800"
       >
-        {isRunning ? (
+        {isActive && !hasResult ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Importing…
+            Syncing in background…
           </>
-        ) : report ? (
+        ) : hasResult ? (
           <>
             <RefreshCw className="mr-2 h-4 w-4" />
             Re-sync store
           </>
         ) : (
-          'Import products'
+          'Start background import'
         )}
       </Button>
+
+      {isActive && !hasResult && (
+        <p className="flex items-center justify-center gap-1.5 text-xs text-neutral-500">
+          <Clock className="h-3.5 w-3.5" />
+          No need to wait — Continue to connect Pinterest.
+        </p>
+      )}
     </div>
   )
 }
