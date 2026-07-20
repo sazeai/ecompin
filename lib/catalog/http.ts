@@ -1,16 +1,19 @@
 /**
  * Polite HTTP helpers for public storefront crawling.
- * - identifiable UA
- * - timeout
- * - light concurrency / delay
+ * - browser-like UA (custom bot UAs get 403/429 on many Shopify stores)
+ * - timeout + 429/503 retry with backoff
+ * - global throttle
  * - robots.txt best-effort gate
  */
 
+// Browser-like UA: Shopify/Cloudflare often hard-throttle custom bot strings.
+// We still identify via Accept-Language and low concurrency.
 export const CATALOG_USER_AGENT =
-  "EcomPinCatalogBot/1.0 (+https://ecompin.com/bot; catalog-sync; respectful crawler)"
+  "Mozilla/5.0 (compatible; EcomPinCatalog/1.0; +https://ecompin.com/bot) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-const DEFAULT_TIMEOUT_MS = 12_000
-const MIN_DELAY_MS = 120
+const DEFAULT_TIMEOUT_MS = 15_000
+const MIN_DELAY_MS = 350
+const MAX_RETRIES = 4
 
 export class CatalogHttpError extends Error {
   status: number
@@ -32,58 +35,110 @@ export interface FetchTextResult {
 }
 
 let lastFetchAt = 0
+let adaptiveDelayMs = MIN_DELAY_MS
 
 async function throttle() {
   const now = Date.now()
-  const wait = MIN_DELAY_MS - (now - lastFetchAt)
+  const wait = adaptiveDelayMs - (now - lastFetchAt)
   if (wait > 0) await new Promise((r) => setTimeout(r, wait))
   lastFetchAt = Date.now()
 }
 
+function bumpDelay(onRateLimit: boolean) {
+  if (onRateLimit) {
+    adaptiveDelayMs = Math.min(4_000, Math.max(adaptiveDelayMs * 2, 800))
+  } else {
+    // slowly recover toward baseline after successes
+    adaptiveDelayMs = Math.max(MIN_DELAY_MS, Math.floor(adaptiveDelayMs * 0.9))
+  }
+}
+
 export async function fetchText(
   url: string,
-  opts?: { timeoutMs?: number; accept?: string; headers?: Record<string, string> }
-): Promise<FetchTextResult> {
-  await throttle()
-
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
-
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": CATALOG_USER_AGENT,
-        Accept: opts?.accept || "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7",
-        "Accept-Language": "en-US,en;q=0.8",
-        ...(opts?.headers || {}),
-      },
-    })
-
-    const text = await res.text()
-    if (!res.ok) {
-      throw new CatalogHttpError(`HTTP ${res.status} for ${url}`, res.status)
-    }
-
-    return {
-      url,
-      finalUrl: res.url || url,
-      status: res.status,
-      text,
-      etag: res.headers.get("etag"),
-      lastModified: res.headers.get("last-modified"),
-      contentType: res.headers.get("content-type"),
-    }
-  } finally {
-    clearTimeout(timeout)
+  opts?: {
+    timeoutMs?: number
+    accept?: string
+    headers?: Record<string, string>
+    retries?: number
   }
+): Promise<FetchTextResult> {
+  const retries = opts?.retries ?? MAX_RETRIES
+  let lastErr: unknown
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    await throttle()
+
+    const controller = new AbortController()
+    const timeout = setTimeout(
+      () => controller.abort(),
+      opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    )
+
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": CATALOG_USER_AGENT,
+          Accept:
+            opts?.accept ||
+            "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          ...(opts?.headers || {}),
+        },
+      })
+
+      const text = await res.text()
+
+      if (res.status === 429 || res.status === 503) {
+        bumpDelay(true)
+        const retryAfter = res.headers.get("retry-after")
+        const fromHeader = retryAfter ? parseFloat(retryAfter) * 1000 : NaN
+        const backoff = Number.isFinite(fromHeader)
+          ? Math.min(fromHeader, 15_000)
+          : Math.min(8_000, 500 * 2 ** attempt)
+        lastErr = new CatalogHttpError(`HTTP ${res.status} for ${url}`, res.status)
+        if (attempt < retries) {
+          await new Promise((r) => setTimeout(r, backoff))
+          continue
+        }
+        throw lastErr
+      }
+
+      if (!res.ok) {
+        throw new CatalogHttpError(`HTTP ${res.status} for ${url}`, res.status)
+      }
+
+      bumpDelay(false)
+
+      return {
+        url,
+        finalUrl: res.url || url,
+        status: res.status,
+        text,
+        etag: res.headers.get("etag"),
+        lastModified: res.headers.get("last-modified"),
+        contentType: res.headers.get("content-type"),
+      }
+    } catch (err) {
+      lastErr = err
+      if (err instanceof CatalogHttpError && err.status !== 429 && err.status !== 503) {
+        throw err
+      }
+      if (attempt >= retries) throw err
+      await new Promise((r) => setTimeout(r, Math.min(8_000, 400 * 2 ** attempt)))
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  throw lastErr instanceof Error ? lastErr : new Error(`Failed to fetch ${url}`)
 }
 
 export async function fetchJson<T = unknown>(
   url: string,
-  opts?: { timeoutMs?: number }
+  opts?: { timeoutMs?: number; retries?: number }
 ): Promise<{ data: T; finalUrl: string; status: number }> {
   const result = await fetchText(url, {
     ...opts,
@@ -108,8 +163,7 @@ export interface RobotsRules {
 
 /**
  * Minimal robots.txt parser for our bot group + * .
- * Fail-open (allowed=true) if robots can't be fetched — public catalog import
- * should not hard-fail on robots outage; we still stay polite with delays.
+ * Fail-open (allowed=true) if robots can't be fetched.
  */
 export async function loadRobots(storeRoot: string): Promise<RobotsRules> {
   const robotsUrl = new URL("/robots.txt", storeRoot).toString()
@@ -117,6 +171,7 @@ export async function loadRobots(storeRoot: string): Promise<RobotsRules> {
     const { text } = await fetchText(robotsUrl, {
       timeoutMs: 6_000,
       accept: "text/plain,*/*",
+      retries: 1,
     })
     return parseRobots(text)
   } catch {
@@ -162,6 +217,10 @@ export function parseRobots(body: string): RobotsRules {
     }
   }
 
+  if (crawlDelaySec > 0) {
+    adaptiveDelayMs = Math.max(adaptiveDelayMs, Math.round(crawlDelaySec * 1000))
+  }
+
   return {
     allowed: !disallowAll,
     sitemaps,
@@ -169,9 +228,7 @@ export function parseRobots(body: string): RobotsRules {
   }
 }
 
-export function isPathDisallowedByRobots(robotsBody: string, path: string): boolean {
-  // Lightweight: only honor Disallow: / for * (already handled). Per-path
-  // matching is intentionally shallow — we never crawl admin/cart/checkout.
+export function isPathDisallowedByRobots(_robotsBody: string, path: string): boolean {
   const blocked = ["/admin", "/cart", "/checkout", "/account", "/orders"]
   return blocked.some((b) => path.startsWith(b))
 }
@@ -191,7 +248,15 @@ export async function mapPool<T, R>(
     }
   }
 
-  const agents = Array.from({ length: Math.min(concurrency, items.length) }, () => run())
+  const agents = Array.from({ length: Math.min(concurrency, Math.max(items.length, 1)) }, () =>
+    run()
+  )
   await Promise.all(agents)
   return results
+}
+
+/** Reset adaptive delay between independent store syncs. */
+export function resetHttpThrottle() {
+  adaptiveDelayMs = MIN_DELAY_MS
+  lastFetchAt = 0
 }

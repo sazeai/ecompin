@@ -35,6 +35,8 @@ interface Product {
   source: string
   is_active: boolean
   lifecycle_status?: string | null
+  marketed?: boolean
+  marketing_priority?: number | null
   created_at: string
 }
 
@@ -68,6 +70,7 @@ export default function ProductsPage() {
   const [storeImporting, setStoreImporting] = useState(false)
   const [catalogStores, setCatalogStores] = useState<CatalogStoreSummary[]>([])
   const [storeImportError, setStoreImportError] = useState<string | null>(null)
+  const [marketedOnly, setMarketedOnly] = useState(false)
 
   // Image viewer
   const [viewingImage, setViewingImage] = useState<{ url: string; title: string } | null>(null)
@@ -263,6 +266,29 @@ export default function ProductsPage() {
     })
   }
 
+  async function handleToggleMarketed(product: Product) {
+    const next = !(product.marketed ?? false)
+    // Optimistic update
+    setProducts(prev =>
+      prev.map(p => (p.id === product.id ? { ...p, marketed: next } : p))
+    )
+    try {
+      const res = await fetch('/api/products/marketed', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, marketed: next }),
+      })
+      if (!res.ok) throw new Error('Failed to update marketing pool')
+      toast.success(next ? 'Added to marketing pool' : 'Removed from marketing pool')
+    } catch (e: any) {
+      // Revert on failure
+      setProducts(prev =>
+        prev.map(p => (p.id === product.id ? { ...p, marketed: !next } : p))
+      )
+      toast.error(e?.message || 'Failed to update marketing pool')
+    }
+  }
+
   async function handleDelete(productId: string) {
     const supabase = createClient()
     await supabase.from('products').delete().eq('id', productId)
@@ -326,19 +352,39 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {products.length} product{products.length !== 1 ? 's' : ''} in your catalog
+            {products.length} product{products.length !== 1 ? 's' : ''} in catalog ·{' '}
+            <span className="font-medium text-neutral-800">
+              {products.filter((p) => p.marketed).length} in marketing pool
+            </span>{' '}
+            (pins rotate only through these)
           </p>
         </div>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          className="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-neutral-800 flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMarketedOnly((v) => !v)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+              marketedOnly
+                ? 'bg-neutral-900 text-white border-neutral-900'
+                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+            }`}
+          >
+            Marketing pool
+            <span className="ml-2 inline-flex items-center rounded-full bg-neutral-100 text-neutral-800 px-2 py-0.5 text-xs">
+              {products.filter((p) => p.marketed).length}
+            </span>
+          </button>
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            className="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-neutral-800 flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Product
+          </button>
+        </div>
       </div>
 
       {/* Catalog stores status */}
@@ -591,7 +637,9 @@ export default function ProductsPage() {
       ) : (
         <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
 
-          {products.map(product => (
+          {products
+            .filter((p) => (marketedOnly ? !!p.marketed : true))
+            .map(product => (
             <div
               key={product.id}
               style={{ breakInside: 'avoid' }}
@@ -619,6 +667,11 @@ export default function ProductsPage() {
                 <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-[#1a1a1a] shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-[#e2e4e7]">
                   {product.source?.startsWith('store_crawl') ? 'crawl' : product.source}
                 </span>
+                {product.marketed && (
+                  <span className="absolute top-2 left-2 mt-6 bg-neutral-900/90 backdrop-blur-sm text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-white shadow border border-neutral-800">
+                    in pool
+                  </span>
+                )}
                 {product.lifecycle_status && product.lifecycle_status !== 'active' && (
                   <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border ${
                     product.lifecycle_status === 'unavailable'
@@ -714,6 +767,18 @@ export default function ProductsPage() {
                         className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af] hover:text-neutral-700 flex items-center gap-1 transition-colors"
                       >
                         <Pencil className="w-3 h-3" strokeWidth={2.2} /> Edit
+                      </button>
+                      {/* Marketing pool toggle */}
+                      <button
+                        onClick={() => handleToggleMarketed(product)}
+                        title={product.marketed ? 'Remove from marketing pool (pins stop)' : 'Add to marketing pool (pins can generate)'}
+                        className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${
+                          product.marketed
+                            ? 'text-neutral-800 hover:text-neutral-600'
+                            : 'text-[#9ca3af] hover:text-neutral-700'
+                        }`}
+                      >
+                        {product.marketed ? 'In pool' : '+ Pool'}
                       </button>
                       <span className="flex-1" />
                       {deletingProductId === product.id ? (

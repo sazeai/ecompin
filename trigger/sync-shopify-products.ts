@@ -57,7 +57,7 @@ export const shopifyProductSync = schedules.task({
         catalogStoreId: payload.catalogStoreId,
         triggerSource: payload.triggerSource || "manual",
         forceFullCrawl: Boolean(payload.forceFullCrawl),
-        maxProductPages: payload.maxProductPages ?? 400,
+        maxProductPages: payload.maxProductPages ?? 2000,
       })
 
       logger.info("Catalog store sync finished (on-demand)", {
@@ -111,7 +111,7 @@ export const shopifyProductSync = schedules.task({
           catalogStoreId: store.id,
           triggerSource: "scheduled",
           forceFullCrawl: false,
-          maxProductPages: 400,
+          maxProductPages: 2000,
         })
         processed++
         if (report.status === "failed") failed++

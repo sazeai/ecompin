@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         catalogStoreId: storeId,
         triggerSource,
         forceFullCrawl,
-        maxProductPages: Number(body.maxProductPages) || 80,
+        maxProductPages: Number(body.maxProductPages) || 500,
       })
 
       return NextResponse.json({
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
         catalogStoreId: storeId,
         triggerSource,
         forceFullCrawl,
-        maxProductPages: 80,
+        maxProductPages: 500,
       })
       return NextResponse.json({
         success: report.status !== "failed",

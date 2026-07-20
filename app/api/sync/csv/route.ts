@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { attachIdentityFields, computeContentHash } from "@/lib/catalog"
+import { attachIdentityFields, computeContentHash, refreshMarketingPool } from "@/lib/catalog"
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -187,9 +187,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Refresh marketing pool across user's catalog (CSV rows are not tied to a store)
+    let pool = null
+    try {
+      pool = await refreshMarketingPool(supabase as any, {
+        userId: user.id,
+        catalogStoreId: null,
+      })
+    } catch {
+      /* non-fatal */
+    }
+
     return NextResponse.json({
       success: true,
-      report: { inserted, updated, errors, errorDetails },
+      report: { inserted, updated, errors, errorDetails, pool },
     })
   } catch (err: any) {
     return NextResponse.json({ message: err.message }, { status: 500 })

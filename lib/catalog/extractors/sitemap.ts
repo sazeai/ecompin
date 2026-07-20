@@ -1,6 +1,7 @@
 import { fetchText, mapPool } from "../http"
 import { canonicalizeUrl, fingerprintList } from "../normalize"
 import { extractProductFromMeta, extractProductsFromJsonLd } from "./jsonld"
+import { extractViaShopifyProductJs } from "./shopify-product-js"
 import type { ExtractorResult, NormalizedProduct, SitemapSnapshot } from "../types"
 
 const PRODUCT_PATH_RE =
@@ -8,7 +9,10 @@ const PRODUCT_PATH_RE =
 
 /**
  * Discover product URLs from sitemap index / product sitemaps, then
- * scrape JSON-LD (and OG meta fallback) from each product page.
+ * hydrate product data.
+ *
+ * Shopify path: prefer /products/{handle}.js (JSON) — avoids HTML 429 storms.
+ * Generic path: HTML JSON-LD + OG meta with low concurrency.
  */
 export async function extractViaSitemap(
   storeRoot: string,
@@ -17,6 +21,7 @@ export async function extractViaSitemap(
     maxProductPages?: number
     previousFingerprint?: string | null
     forceFullCrawl?: boolean
+    preferShopifyJs?: boolean
   }
 ): Promise<ExtractorResult | null> {
   const warnings: string[] = []
@@ -54,6 +59,27 @@ export async function extractViaSitemap(
     }
   }
 
+  const shopifyLike =
+    opts?.preferShopifyJs !== false &&
+    discovered.productUrls.some((u) => /\/products\/[^/]+/i.test(u))
+
+  if (shopifyLike) {
+    const viaJs = await extractViaShopifyProductJs(storeRoot, discovered.productUrls, {
+      maxProductPages: opts?.maxProductPages ?? 2000,
+      sitemapUrl: discovered.sitemapUrl,
+      lastmodByUrl: discovered.lastmodByUrl,
+      previousFingerprint: opts?.previousFingerprint,
+      forceFullCrawl: true, // fingerprint already checked above
+    })
+    if (viaJs) {
+      return {
+        ...viaJs,
+        pagesFetched: pagesFetched + (viaJs.pagesFetched || 0),
+        warnings: [...warnings, ...(viaJs.warnings || [])].slice(0, 40),
+      }
+    }
+  }
+
   const maxPages = opts?.maxProductPages ?? 300
   const urls = discovered.productUrls.slice(0, maxPages)
   if (discovered.productUrls.length > maxPages) {
@@ -62,29 +88,33 @@ export async function extractViaSitemap(
     )
   }
 
-  const scraped = await mapPool(urls, 3, async (productUrl) => {
+  // HTML fallback — concurrency 1 to reduce 429s
+  const scraped = await mapPool(urls, 1, async (productUrl) => {
     try {
-      const { text, finalUrl } = await fetchText(productUrl, { timeoutMs: 12_000 })
+      const { text, finalUrl } = await fetchText(productUrl, {
+        timeoutMs: 12_000,
+        retries: 2,
+      })
       pagesFetched++
       const fromLd = extractProductsFromJsonLd(text, finalUrl)
       if (fromLd.length > 0) {
-        // Prefer the product whose URL matches the page
         const match =
           fromLd.find((p) => p.productUrl === canonicalizeUrl(finalUrl)) || fromLd[0]
         return match
       }
       return extractProductFromMeta(text, finalUrl)
     } catch (err) {
-      warnings.push(
-        `Failed product page ${productUrl}: ${err instanceof Error ? err.message : "error"}`
-      )
+      if (warnings.length < 30) {
+        warnings.push(
+          `Failed product page ${productUrl}: ${err instanceof Error ? err.message : "error"}`
+        )
+      }
       return null
     }
   })
 
   const products = scraped.filter(Boolean) as NormalizedProduct[]
-  if (products.length === 0 && !opts?.previousFingerprint) {
-    // Still return snapshot so caller can store fingerprint, but signal weak result
+  if (products.length === 0) {
     warnings.push("Sitemap found product URLs but no product data could be extracted")
   }
 
@@ -132,6 +162,7 @@ async function discoverProductSitemap(
       const { text } = await fetchText(candidate, {
         timeoutMs: 12_000,
         accept: "application/xml,text/xml,*/*",
+        retries: 2,
       })
       onFetch(1)
 
@@ -160,18 +191,23 @@ async function expandSitemap(
   const productUrls: string[] = []
   const lastmodByUrl: Record<string, string | undefined> = {}
 
-  // Sitemap index → recurse into child sitemaps (prefer product ones)
   const indexLocs = matchTags(xml, "sitemap")
   if (indexLocs.length > 0 && depth < 2) {
     const ranked = [...indexLocs].sort((a, b) => scoreSitemapName(b.loc) - scoreSitemapName(a.loc))
-    // Cap child sitemaps to avoid runaway
-    for (const child of ranked.slice(0, 15)) {
+    for (const child of ranked.slice(0, 20)) {
       if (!child.loc) continue
-      // Skip non-product heavy sitemaps when we already have product-named ones later
+      // Skip obvious non-product sitemaps when product ones exist
+      if (
+        scoreSitemapName(child.loc) < 0 &&
+        ranked.some((r) => scoreSitemapName(r.loc) >= 80)
+      ) {
+        continue
+      }
       try {
         const { text } = await fetchText(child.loc, {
           timeoutMs: 12_000,
           accept: "application/xml,text/xml,*/*",
+          retries: 2,
         })
         onFetch(1)
         const nested = await expandSitemap(text, storeRoot, onFetch, depth + 1)
@@ -187,7 +223,6 @@ async function expandSitemap(
     }
   }
 
-  // urlset
   const urls = matchTags(xml, "url")
   for (const entry of urls) {
     if (!entry.loc) continue
@@ -209,13 +244,17 @@ function matchTags(
   parentTag: "url" | "sitemap"
 ): Array<{ loc: string; lastmod?: string }> {
   const results: Array<{ loc: string; lastmod?: string }> = []
-  // Namespace-tolerant
-  const blockRe = new RegExp(`<(?:\\w+:)?${parentTag}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${parentTag}>`, "gi")
+  const blockRe = new RegExp(
+    `<(?:\\w+:)?${parentTag}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${parentTag}>`,
+    "gi"
+  )
   let block: RegExpExecArray | null
   while ((block = blockRe.exec(xml))) {
     const body = block[1]
     const loc = body.match(/<(?:\w+:)?loc[^>]*>\s*([^<\s]+)\s*<\/(?:\w+:)?loc>/i)?.[1]
-    const lastmod = body.match(/<(?:\w+:)?lastmod[^>]*>\s*([^<\s]+)\s*<\/(?:\w+:)?lastmod>/i)?.[1]
+    const lastmod = body.match(
+      /<(?:\w+:)?lastmod[^>]*>\s*([^<\s]+)\s*<\/(?:\w+:)?lastmod>/i
+    )?.[1]
     if (loc) {
       results.push({
         loc: decodeXml(loc.trim()),
@@ -241,7 +280,8 @@ function scoreSitemapName(url: string): number {
   if (u.includes("pdp")) return 80
   if (u.includes("item")) return 60
   if (u.includes("shop")) return 40
-  if (u.includes("page") || u.includes("blog") || u.includes("post") || u.includes("category")) return -50
+  if (u.includes("page") || u.includes("blog") || u.includes("post") || u.includes("category"))
+    return -50
   return 0
 }
 
@@ -250,18 +290,13 @@ export function looksLikeProductUrl(url: string): boolean {
     const u = new URL(url)
     const path = u.pathname
     if (path === "/" || path.length < 2) return false
-    // Explicit non-product
     if (/\/(cart|checkout|account|login|blogs?|pages|collections\/?$|search|policies)/i.test(path)) {
       return false
     }
     if (PRODUCT_PATH_RE.test(path)) return true
-    // Shopify product sitemap entries are almost always /products/handle
     if (/\/products\/[^/]+$/i.test(path)) return true
-    // Woo often /product/handle
     if (/\/product\/[^/]+$/i.test(path)) return true
-    // Heuristic: deep path with slug, not a file
     if (!/\.[a-z0-9]{2,5}$/i.test(path) && path.split("/").filter(Boolean).length >= 2) {
-      // Only accept if sitemap itself was product-named (caller filters); be conservative here
       return /product|sku|item/i.test(path)
     }
     return false

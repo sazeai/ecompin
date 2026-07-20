@@ -137,4 +137,6 @@ export interface SyncOptions {
   forceFullCrawl?: boolean
   /** Missing for this many consecutive syncs → unavailable */
   missingThreshold?: number
+  /** Max products in the pin rotation pool for this store */
+  marketingPoolCap?: number
 }

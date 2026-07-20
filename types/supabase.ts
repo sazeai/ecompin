@@ -1264,6 +1264,8 @@ export type Database = {
           is_active: boolean
           last_seen_at: string | null
           lifecycle_status: string
+          marketed: boolean
+          marketing_priority: number
           missing_sync_count: number
           platform_product_id: string | null
           price: number | null
@@ -1290,6 +1292,8 @@ export type Database = {
           is_active?: boolean
           last_seen_at?: string | null
           lifecycle_status?: string
+          marketed?: boolean
+          marketing_priority?: number
           missing_sync_count?: number
           platform_product_id?: string | null
           price?: number | null

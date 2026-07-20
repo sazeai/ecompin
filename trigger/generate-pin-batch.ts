@@ -257,13 +257,15 @@ export const generatePinBatch = schedules.task({
           continue
         }
 
-        // Get products that need pins (active + available products that have an image).
+        // Get products that need pins (marketed pool + active + image).
         // lifecycle_status unavailable/deleted must never receive new pins (out-of-stock protection).
+        // marketed=true bounds automation to the curated pool (e.g. 150) even when catalog is 500–1000+.
         const { data: products } = await supabase
           .from("products")
-          .select("id, title, description, image_r2_key, image_url, tags, lifecycle_status")
+          .select("id, title, description, image_r2_key, image_url, tags, lifecycle_status, marketed")
           .eq("user_id", brand.user_id)
           .eq("is_active", true)
+          .eq("marketed", true)
           .not("image_url", "is", null)
           .or("lifecycle_status.is.null,lifecycle_status.in.(active,updated)")
 

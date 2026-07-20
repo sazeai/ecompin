@@ -4,7 +4,7 @@ import { extractViaHomepageJsonLd } from "./extractors/homepage-jsonld"
 import { extractViaProductsJson } from "./extractors/products-json"
 import { extractViaRss } from "./extractors/rss"
 import { extractViaSitemap } from "./extractors/sitemap"
-import { fetchText, loadRobots } from "./http"
+import { fetchText, loadRobots, resetHttpThrottle } from "./http"
 import {
   buildNormalizedProduct,
   computeContentHash,
@@ -13,6 +13,7 @@ import {
   normalizeStoreUrl,
 } from "./normalize"
 import { detectPlatformFromHtml, detectPlatformFromUrl } from "./platform"
+import { refreshMarketingPool } from "./marketing-pool"
 import type {
   CatalogExtractorName,
   CatalogPlatform,
@@ -42,6 +43,7 @@ export async function syncStoreCatalog(
   const started = Date.now()
   const missingThreshold = options.missingThreshold ?? DEFAULT_MISSING_THRESHOLD
   const warnings: string[] = []
+  resetHttpThrottle()
 
   let canonicalUrl: string
   try {
@@ -391,6 +393,25 @@ export async function syncStoreCatalog(
       warnings.push(...writeErrors.slice(0, 8))
     }
 
+    // Refresh the bounded marketing pool (pins rotate only through marketed products)
+    let poolInfo: { poolSize: number; promoted: number; demoted: number; cap: number } | null = null
+    try {
+      poolInfo = await refreshMarketingPool(supabase, {
+        userId: options.userId,
+        catalogStoreId: store.id,
+        cap: options.marketingPoolCap,
+      })
+      if (poolInfo) {
+        warnings.push(
+          `Marketing pool: ${poolInfo.poolSize}/${poolInfo.cap} active, ${poolInfo.promoted} promoted, ${poolInfo.demoted} demoted`
+        )
+      }
+    } catch (err) {
+      warnings.push(
+        `Marketing pool refresh failed: ${err instanceof Error ? err.message : "error"}`
+      )
+    }
+
     const { count: activeCount } = await supabase
       .from("products")
       .select("id", { count: "exact", head: true })
@@ -498,12 +519,14 @@ async function runExtractorChain(args: {
     if (viaJson && viaJson.products.length > 0) return viaJson
   }
 
-  // 2) Sitemap → product pages JSON-LD
+  // 2) Sitemap → Shopify product.js (preferred) or HTML JSON-LD
   const viaSitemap = await extractViaSitemap(args.storeRoot, {
     robotsSitemaps: args.robotsSitemaps,
-    maxProductPages: args.maxProductPages,
+    // Shopify .js is cheap; allow full catalogs (500–2000) by default
+    maxProductPages: args.maxProductPages ?? (args.platform === "shopify" ? 2000 : 400),
     previousFingerprint: args.previousFingerprint,
     forceFullCrawl: args.forceFullCrawl,
+    preferShopifyJs: args.platform === "shopify" || args.platform === "unknown" || args.platform === "generic",
   })
   if (viaSitemap && (viaSitemap.products.length > 0 || viaSitemap.sitemapShortCircuited)) {
     return viaSitemap
@@ -643,16 +666,26 @@ async function finalizeFailure(
   }
 }
 
+/**
+ * products.source is constrained in DB to:
+ *   shopify | etsy | manual | csv | store_crawl
+ * Prefer "shopify" for Shopify public endpoints so existing dashboards/filters keep working.
+ * Use "store_crawl" for generic public discovery.
+ */
 function sourceForExtractor(name: CatalogExtractorName): string {
   switch (name) {
     case "products_json":
-      return "store_crawl_products_json"
+      return "shopify"
     case "sitemap_jsonld":
-      return "store_crawl_sitemap"
+      // Shopify product.js path still uses this extractor name
+      return "shopify"
     case "jsonld_homepage":
-      return "store_crawl_jsonld"
     case "rss_xml":
-      return "store_crawl_rss"
+      return "store_crawl"
+    case "csv":
+      return "csv"
+    case "manual":
+      return "manual"
     default:
       return "store_crawl"
   }

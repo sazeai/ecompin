@@ -269,7 +269,7 @@ function StoreUrlImport() {
         </div>
       )}
 
-      {report && !error && (
+      {report && !error && (report.inserted > 0 || report.updated > 0 || (report.unchanged || 0) > 0) && (
         <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
           <div className="text-sm text-green-800">
@@ -285,6 +285,19 @@ function StoreUrlImport() {
                 {store?.platform ? ` · ${store.platform}` : ''}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {report && !error && report.inserted === 0 && report.updated === 0 && !(report.unchanged && report.unchanged > 0) && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div className="text-sm text-amber-900">
+            <p className="font-medium">No products saved</p>
+            <p className="mt-1">
+              Found {report.productsSeen ?? 0} products but none were written.
+              Try Re-sync, or upload a CSV export.
+            </p>
           </div>
         </div>
       )}

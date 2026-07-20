@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { putR2Object } from "@/lib/r2"
-import { attachIdentityFields, computeContentHash } from "@/lib/catalog"
+import { attachIdentityFields, computeContentHash, maybeAddToMarketingPool } from "@/lib/catalog"
 
 /**
  * Manual Product Upload API
@@ -114,6 +114,17 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("Failed to create product:", error)
       return NextResponse.json({ error: "Failed to create product" }, { status: 500 })
+    }
+
+    // Manual products should marketable by default when pool has room
+    try {
+      await maybeAddToMarketingPool(supabase as any, {
+        userId: user.id,
+        productId: product.id,
+        catalogStoreId: null,
+      })
+    } catch {
+      /* non-fatal */
     }
 
     return NextResponse.json({ product }, { status: 201 })
