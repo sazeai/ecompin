@@ -41,7 +41,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.1",
     "@tavily/core": "^0.5.13",
-    "@trigger.dev/sdk": "4.4.5",
+    "@trigger.dev/sdk": "4.5.5",
     "@types/cheerio": "^0.22.35",
     "@types/mark.js": "^8.11.12",
     "@upstash/qstash": "^2.8.3",
@@ -98,7 +98,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
-    "@trigger.dev/build": "4.4.5",
+    "@trigger.dev/build": "4.5.5",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
