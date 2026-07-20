@@ -1110,18 +1110,165 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_stores: {
+        Row: {
+          id: string
+          user_id: string
+          brand_settings_id: string | null
+          canonical_url: string
+          platform: string
+          sync_status: string
+          last_synced_at: string | null
+          last_started_at: string | null
+          last_error: string | null
+          product_count: number
+          sitemap_url: string | null
+          sitemap_fingerprint: string | null
+          sitemap_product_count: number | null
+          sitemap_urls_sample: string[] | null
+          last_extractor_used: string | null
+          robots_allowed: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand_settings_id?: string | null
+          canonical_url: string
+          platform?: string
+          sync_status?: string
+          last_synced_at?: string | null
+          last_started_at?: string | null
+          last_error?: string | null
+          product_count?: number
+          sitemap_url?: string | null
+          sitemap_fingerprint?: string | null
+          sitemap_product_count?: number | null
+          sitemap_urls_sample?: string[] | null
+          last_extractor_used?: string | null
+          robots_allowed?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          brand_settings_id?: string | null
+          canonical_url?: string
+          platform?: string
+          sync_status?: string
+          last_synced_at?: string | null
+          last_started_at?: string | null
+          last_error?: string | null
+          product_count?: number
+          sitemap_url?: string | null
+          sitemap_fingerprint?: string | null
+          sitemap_product_count?: number | null
+          sitemap_urls_sample?: string[] | null
+          last_extractor_used?: string | null
+          robots_allowed?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_stores_brand_settings_id_fkey"
+            columns: ["brand_settings_id"]
+            isOneToOne: false
+            referencedRelation: "brand_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_sync_runs: {
+        Row: {
+          id: string
+          catalog_store_id: string
+          user_id: string
+          trigger_source: string
+          status: string
+          extractor_used: string | null
+          products_seen: number
+          products_inserted: number
+          products_updated: number
+          products_unchanged: number
+          products_unavailable: number
+          pages_fetched: number
+          sitemap_short_circuited: boolean
+          error_message: string | null
+          started_at: string
+          finished_at: string | null
+          meta: Json
+        }
+        Insert: {
+          id?: string
+          catalog_store_id: string
+          user_id: string
+          trigger_source?: string
+          status?: string
+          extractor_used?: string | null
+          products_seen?: number
+          products_inserted?: number
+          products_updated?: number
+          products_unchanged?: number
+          products_unavailable?: number
+          pages_fetched?: number
+          sitemap_short_circuited?: boolean
+          error_message?: string | null
+          started_at?: string
+          finished_at?: string | null
+          meta?: Json
+        }
+        Update: {
+          id?: string
+          catalog_store_id?: string
+          user_id?: string
+          trigger_source?: string
+          status?: string
+          extractor_used?: string | null
+          products_seen?: number
+          products_inserted?: number
+          products_updated?: number
+          products_unchanged?: number
+          products_unavailable?: number
+          pages_fetched?: number
+          sitemap_short_circuited?: boolean
+          error_message?: string | null
+          started_at?: string
+          finished_at?: string | null
+          meta?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_sync_runs_catalog_store_id_fkey"
+            columns: ["catalog_store_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand_settings_id: string | null
+          catalog_store_id: string | null
+          content_hash: string | null
           created_at: string
           currency: string | null
           description: string | null
+          handle: string | null
           id: string
           image_r2_key: string | null
           image_url: string | null
           is_active: boolean
+          last_seen_at: string | null
+          lifecycle_status: string
+          missing_sync_count: number
+          platform_product_id: string | null
           price: number | null
           product_url: string | null
+          sku: string | null
           source: string
           source_product_id: string | null
           tags: string[] | null
@@ -1131,15 +1278,23 @@ export type Database = {
         }
         Insert: {
           brand_settings_id?: string | null
+          catalog_store_id?: string | null
+          content_hash?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
+          handle?: string | null
           id?: string
           image_r2_key?: string | null
           image_url?: string | null
           is_active?: boolean
+          last_seen_at?: string | null
+          lifecycle_status?: string
+          missing_sync_count?: number
+          platform_product_id?: string | null
           price?: number | null
           product_url?: string | null
+          sku?: string | null
           source?: string
           source_product_id?: string | null
           tags?: string[] | null
@@ -1149,15 +1304,23 @@ export type Database = {
         }
         Update: {
           brand_settings_id?: string | null
+          catalog_store_id?: string | null
+          content_hash?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
+          handle?: string | null
           id?: string
           image_r2_key?: string | null
           image_url?: string | null
           is_active?: boolean
+          last_seen_at?: string | null
+          lifecycle_status?: string
+          missing_sync_count?: number
+          platform_product_id?: string | null
           price?: number | null
           product_url?: string | null
+          sku?: string | null
           source?: string
           source_product_id?: string | null
           tags?: string[] | null
@@ -1171,6 +1334,13 @@ export type Database = {
             columns: ["brand_settings_id"]
             isOneToOne: false
             referencedRelation: "brand_settings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_catalog_store_id_fkey"
+            columns: ["catalog_store_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_stores"
             referencedColumns: ["id"]
           },
         ]

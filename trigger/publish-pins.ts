@@ -249,13 +249,32 @@ export const publishPins = schedules.task({
             // Fetch the pin details
             const { data: pin } = await supabase
               .from("pins")
-              .select("*, products(title, product_url)")
+              .select("*, products(title, product_url, is_active, lifecycle_status)")
               .eq("id", queueItem.pin_id)
               .single()
 
             if (!pin || !pin.rendered_image_url) {
               logger.warn(`Pin ${queueItem.pin_id}: missing rendered image, skipping`)
               await supabase.from("pin_queue").update({ status: "cancelled" }).eq("id", queueItem.id)
+              continue
+            }
+
+            // Never publish pins for unavailable / inactive catalog products
+            if (
+              !pin.is_mood_board &&
+              pin.products &&
+              (pin.products.is_active === false ||
+                pin.products.lifecycle_status === "unavailable" ||
+                pin.products.lifecycle_status === "deleted")
+            ) {
+              logger.info(
+                `Pin ${queueItem.pin_id}: product unavailable/inactive — cancelling queue item`
+              )
+              await supabase.from("pin_queue").update({ status: "cancelled" }).eq("id", queueItem.id)
+              await supabase
+                .from("pins")
+                .update({ status: "failed", error_message: "Product unavailable" })
+                .eq("id", queueItem.pin_id)
               continue
             }
 

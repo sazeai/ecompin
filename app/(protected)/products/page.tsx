@@ -34,7 +34,19 @@ interface Product {
   image_url: string | null
   source: string
   is_active: boolean
+  lifecycle_status?: string | null
   created_at: string
+}
+
+interface CatalogStoreSummary {
+  id: string
+  canonical_url: string
+  platform: string
+  sync_status: string
+  last_synced_at: string | null
+  last_error: string | null
+  product_count: number
+  last_extractor_used: string | null
 }
 
 export default function ProductsPage() {
@@ -51,6 +63,12 @@ export default function ProductsPage() {
   const [isCsvUploading, setIsCsvUploading] = useState(false)
   const [syncReport, setSyncReport] = useState<{ updated: number; inserted: number; errors: number; errorDetails?: string[] } | null>(null)
 
+  // Store URL import
+  const [storeUrl, setStoreUrl] = useState('')
+  const [storeImporting, setStoreImporting] = useState(false)
+  const [catalogStores, setCatalogStores] = useState<CatalogStoreSummary[]>([])
+  const [storeImportError, setStoreImportError] = useState<string | null>(null)
+
   // Image viewer
   const [viewingImage, setViewingImage] = useState<{ url: string; title: string } | null>(null)
   const [zoomLevel, setZoomLevel] = useState(1)
@@ -62,6 +80,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts()
+    fetchCatalogStores()
   }, [])
 
   async function fetchProducts() {
@@ -77,6 +96,80 @@ export default function ProductsPage() {
 
     setProducts((data as Product[]) || [])
     setLoading(false)
+  }
+
+  async function fetchCatalogStores() {
+    try {
+      const res = await fetch('/api/catalog/sync')
+      if (!res.ok) return
+      const data = await res.json()
+      setCatalogStores(data.stores || [])
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  async function handleStoreUrlImport() {
+    if (!storeUrl.trim()) return
+    setStoreImporting(true)
+    setStoreImportError(null)
+    try {
+      const res = await fetch('/api/catalog/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeUrl: storeUrl.trim(), mode: 'async' }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || body.message || 'Import failed')
+
+      if (body.report) {
+        if (body.report.status === 'failed') {
+          throw new Error(body.report.errorMessage || 'Import failed')
+        }
+        toast.success(
+          `Imported ${body.report.inserted} new, updated ${body.report.updated}`
+        )
+        setStoreUrl('')
+        await fetchProducts()
+        await fetchCatalogStores()
+        setStoreImporting(false)
+        return
+      }
+
+      const storeId = body.store?.id
+      toast.success('Catalog import started')
+      // Poll until done
+      if (storeId) {
+        const started = Date.now()
+        while (Date.now() - started < 120_000) {
+          await new Promise((r) => setTimeout(r, 2000))
+          const st = await fetch(`/api/catalog/sync?storeId=${storeId}&runs=1`)
+          if (!st.ok) continue
+          const payload = await st.json()
+          const status = payload.store?.sync_status
+          if (status === 'success' || status === 'partial') {
+            const run = payload.latestRun
+            toast.success(
+              run
+                ? `Imported ${run.products_inserted || 0} new, updated ${run.products_updated || 0}`
+                : 'Catalog imported'
+            )
+            break
+          }
+          if (status === 'failed') {
+            throw new Error(payload.store?.last_error || 'Import failed')
+          }
+        }
+      }
+      setStoreUrl('')
+      await fetchProducts()
+      await fetchCatalogStores()
+    } catch (err: any) {
+      setStoreImportError(err.message || 'Import failed')
+      toast.error(err.message || 'Import failed')
+    } finally {
+      setStoreImporting(false)
+    }
   }
 
   async function handleManualUpload() {
@@ -248,11 +341,97 @@ export default function ProductsPage() {
         </button>
       </div>
 
+      {/* Catalog stores status */}
+      {catalogStores.length > 0 && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3">
+          <p className="text-sm font-medium text-neutral-900">Connected stores</p>
+          <div className="space-y-2">
+            {catalogStores.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-neutral-800">{s.canonical_url}</p>
+                  <p className="text-xs text-neutral-500">
+                    {s.platform} · {s.product_count} products · {s.sync_status}
+                    {s.last_extractor_used ? ` · via ${s.last_extractor_used}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={storeImporting || s.sync_status === 'running'}
+                  onClick={async () => {
+                    setStoreUrl(s.canonical_url)
+                    setStoreImporting(true)
+                    try {
+                      const res = await fetch('/api/catalog/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ storeUrl: s.canonical_url, mode: 'async' }),
+                      })
+                      if (!res.ok) {
+                        const b = await res.json().catch(() => ({}))
+                        throw new Error(b.error || 'Re-sync failed')
+                      }
+                      toast.success('Re-sync queued')
+                      setTimeout(() => {
+                        fetchProducts()
+                        fetchCatalogStores()
+                      }, 4000)
+                    } catch (e: any) {
+                      toast.error(e.message || 'Re-sync failed')
+                    } finally {
+                      setStoreImporting(false)
+                    }
+                  }}
+                  className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Re-sync
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Unified Upload Dashboard */}
       {showUpload && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 bg-white border border-neutral-200 rounded-2xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 bg-white border border-neutral-200 rounded-2xl">
 
-          {/* Left Column: Manual Form */}
+          {/* Store URL */}
+          <div className="space-y-5 lg:border-r lg:border-neutral-100 lg:pr-6">
+            <div>
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-neutral-500" /> Store URL
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Import a public catalog — no Shopify app or API keys.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="url"
+                value={storeUrl}
+                onChange={(e) => setStoreUrl(e.target.value)}
+                placeholder="https://yourstore.com"
+                className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+              />
+              {storeImportError && (
+                <p className="text-xs text-red-600">{storeImportError}</p>
+              )}
+              <button
+                onClick={handleStoreUrlImport}
+                disabled={!storeUrl.trim() || storeImporting}
+                className="w-full bg-neutral-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {storeImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                {storeImporting ? 'Importing…' : 'Import from URL'}
+              </button>
+            </div>
+          </div>
+
+          {/* Manual Form */}
           <div className="space-y-5 lg:border-r lg:border-neutral-100 lg:pr-6">
             <div>
               <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -331,13 +510,13 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Right Column: CSV Upload */}
-          <div className="space-y-5 lg:pl-2">
+          {/* CSV Upload */}
+          <div className="space-y-5">
             <div>
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <UploadCloud className="w-5 h-5 text-neutral-500" /> Bulk CSV
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">Export from Shopify and upload here for an instant sync.</p>
+              <p className="text-xs text-muted-foreground mt-1">Fallback when URL import is blocked. Shopify export format works best.</p>
             </div>
 
             <div className="space-y-4 pt-1">
@@ -436,10 +615,21 @@ export default function ProductsPage() {
                     <ShoppingBag className="w-10 h-10 text-[#d1d5db]" />
                   </div>
                 )}
-                {/* Source badge */}
+                {/* Source + lifecycle badges */}
                 <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-[#1a1a1a] shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-[#e2e4e7]">
-                  {product.source}
+                  {product.source?.startsWith('store_crawl') ? 'crawl' : product.source}
                 </span>
+                {product.lifecycle_status && product.lifecycle_status !== 'active' && (
+                  <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border ${
+                    product.lifecycle_status === 'unavailable'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : product.lifecycle_status === 'updated'
+                        ? 'bg-blue-50 text-blue-800 border-blue-200'
+                        : 'bg-neutral-50 text-neutral-600 border-neutral-200'
+                  }`}>
+                    {product.lifecycle_status}
+                  </span>
+                )}
                 {/* Expand image — always visible on mobile */}
                 {product.image_url && (
                   <button

@@ -257,13 +257,15 @@ export const generatePinBatch = schedules.task({
           continue
         }
 
-        // Get products that need pins (active products that have an image)
+        // Get products that need pins (active + available products that have an image).
+        // lifecycle_status unavailable/deleted must never receive new pins (out-of-stock protection).
         const { data: products } = await supabase
           .from("products")
-          .select("id, title, description, image_r2_key, image_url, tags")
+          .select("id, title, description, image_r2_key, image_url, tags, lifecycle_status")
           .eq("user_id", brand.user_id)
           .eq("is_active", true)
           .not("image_url", "is", null)
+          .or("lifecycle_status.is.null,lifecycle_status.in.(active,updated)")
 
         if (!products || products.length === 0) {
           logger.info(`No products with images for user ${brand.user_id}`)
