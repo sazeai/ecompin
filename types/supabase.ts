@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      dodopayments_events: {
+        Row: {
+          dodopayments_event_id: string
+          processed_at: string
+        }
+        Insert: {
+          dodopayments_event_id: string
+          processed_at?: string
+        }
+        Update: {
+          dodopayments_event_id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          created_at: string
+          dodopayments_session_id: string | null
+          id: string
+          is_hidden: boolean
+          offer_text: string
+          opportunity_id: string
+          payment_status: "pending_payment" | "paid" | "refunded"
+          product_name: string
+          product_url: string
+          provider_email: string
+          published_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          dodopayments_session_id?: string | null
+          id?: string
+          is_hidden?: boolean
+          offer_text: string
+          opportunity_id: string
+          payment_status?: "pending_payment" | "paid" | "refunded"
+          product_name: string
+          product_url: string
+          provider_email: string
+          published_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          dodopayments_session_id?: string | null
+          id?: string
+          is_hidden?: boolean
+          offer_text?: string
+          opportunity_id?: string
+          payment_status?: "pending_payment" | "paid" | "refunded"
+          product_name?: string
+          product_url?: string
+          provider_email?: string
+          published_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          created_at: string
+          customer_email: string
+          id: string
+          is_demo: boolean
+          leaving_product: string
+          monthly_spend: number
+          reason: string
+          slug: string
+          status: "active" | "hidden"
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          id?: string
+          is_demo?: boolean
+          leaving_product: string
+          monthly_spend: number
+          reason: string
+          slug: string
+          status?: "active" | "hidden"
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          id?: string
+          is_demo?: boolean
+          leaving_product?: string
+          monthly_spend?: number
+          reason?: string
+          slug?: string
+          status?: "active" | "hidden"
+        }
+        Relationships: []
+      }
       account_health_log: {
         Row: {
           checked_at: string

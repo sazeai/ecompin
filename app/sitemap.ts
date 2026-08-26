@@ -1,38 +1,11 @@
-import { MetadataRoute } from 'next'
-import { defaultSEO } from '@/config/seo'
+import type { MetadataRoute } from "next"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = defaultSEO.siteUrl
-  const currentDate = new Date()
-
-  // Static public pages only (no protected or noindex routes)
-  const staticPages = [
-    {
-      url: baseUrl,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 1,
-    },
-  ]
-
-  // Targeted fix: include key public pages and landing pages
-  const extraRoutes = [
-    '/pricing',
-    '/privacy-policy',
-    '/terms',
-    '/refund-policy',
-  ]
-
-  const additionalPages: MetadataRoute.Sitemap = extraRoutes.map((path) => ({
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://steal.lol").replace(/\/$/, "")
+  return ["", "/privacy-policy", "/terms", "/refund-policy"].map((path, index) => ({
     url: `${baseUrl}${path}`,
-    lastModified: currentDate,
-    changeFrequency: ['privacy-policy', 'terms', 'refund-policy'].some((p) => path.includes(p))
-      ? ('monthly' as const)
-      : ('weekly' as const),
-    priority: ['privacy-policy', 'terms', 'refund-policy'].some((p) => path.includes(p))
-      ? 0.5
-      : 0.7,
+    lastModified: new Date(),
+    changeFrequency: index === 0 ? "daily" : "monthly",
+    priority: index === 0 ? 1 : 0.4,
   }))
-
-  return [...staticPages, ...additionalPages]
 }

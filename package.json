@@ -110,7 +110,7 @@
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
   },
-  "name": "dodo-starter",
+  "name": "steal-lol",
   "private": true,
   "scripts": {
     "build": "next build",

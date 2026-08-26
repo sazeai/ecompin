@@ -1,331 +1,438 @@
-{
-  "storeId": "5599f2ef-05a6-466d-a1bf-548c634654d6",
-  "canonicalUrl": "https://boingg.in",
-  "platform": "shopify",
-  "extractorUsed": "sitemap_jsonld",
-  "status": "partial",
-  "productsSeen": 150,
-  "inserted": 0,
-  "updated": 0,
-  "unchanged": 0,
-  "unavailable": 0,
-  "pagesFetched": 155,
-  "sitemapShortCircuited": false,
-  "warnings": [
-    "Sitemap has 570 product URLs; crawling first 400",
-    "Failed product page https://boingg.in/products/technicolor-study-table-chair: HTTP 503 for https://boingg.in/products/technicolor-study-table-chair",
-    "Failed product page https://boingg.in/products/groovy-love-bed: HTTP 429 for https://boingg.in/products/groovy-love-bed",
-    "Failed product page https://boingg.in/products/groovy-love-chair-1: HTTP 429 for https://boingg.in/products/groovy-love-chair-1",
-    "Failed product page https://boingg.in/products/muppets-bed: HTTP 429 for https://boingg.in/products/muppets-bed",
-    "Failed product page https://boingg.in/products/hangout-bed: HTTP 429 for https://boingg.in/products/hangout-bed",
-    "Failed product page https://boingg.in/products/step-up-bed: HTTP 429 for https://boingg.in/products/step-up-bed",
-    "Failed product page https://boingg.in/products/untangled-chest-of-drawer-cabinet: HTTP 429 for https://boingg.in/products/untangled-chest-of-drawer-cabinet",
-    "Failed product page https://boingg.in/products/up-on-top-storage: HTTP 429 for https://boingg.in/products/up-on-top-storage",
-    "Failed product page https://boingg.in/products/noughts-dots-step-storage-cabinet: HTTP 429 for https://boingg.in/products/noughts-dots-step-storage-cabinet",
-    "Failed product page https://boingg.in/products/old-timer-study-table-hipster-chair-bundle: HTTP 429 for https://boingg.in/products/old-timer-study-table-hipster-chair-bundle",
-    "Failed product page https://boingg.in/products/gen-z-study-table-peapod-chair-bundle: HTTP 429 for https://boingg.in/products/gen-z-study-table-peapod-chair-bundle",
-    "Failed product page https://boingg.in/products/topolino-toddlers-study-table-chair: HTTP 429 for https://boingg.in/products/topolino-toddlers-study-table-chair",
-    "Failed product page https://boingg.in/products/geometry-storage-cabinet: HTTP 429 for https://boingg.in/products/geometry-storage-cabinet",
-    "Failed product page https://boingg.in/products/baby-cloud-storage-cabinet: HTTP 429 for https://boingg.in/products/baby-cloud-storage-cabinet",
-    "Failed product page https://boingg.in/products/toolbox-storage: HTTP 429 for https://boingg.in/products/toolbox-storage",
-    "Failed product page https://boingg.in/products/tangram-storage-cabinet: HTTP 429 for https://boingg.in/products/tangram-storage-cabinet",
-    "Failed product page https://boingg.in/products/toddlers-ele-chair: HTTP 429 for https://boingg.in/products/toddlers-ele-chair",
-    "Failed product page https://boingg.in/products/toddlers-minuto-chair: HTTP 429 for https://boingg.in/products/toddlers-minuto-chair",
-    "Failed product page https://boingg.in/products/toddlers-goblin-study-table-chair: HTTP 429 for https://boingg.in/products/toddlers-goblin-study-table-chair",
-    "Failed product page https://boingg.in/products/caravan-bunk-bed-storage: HTTP 429 for https://boingg.in/products/caravan-bunk-bed-storage",
-    "Failed product page https://boingg.in/products/hipster-chair: HTTP 429 for https://boingg.in/products/hipster-chair",
-    "Failed product page https://boingg.in/products/hold-all-display-cum-toy-storage-unit: HTTP 429 for https://boingg.in/products/hold-all-display-cum-toy-storage-unit",
-    "Failed product page https://boingg.in/products/hotdog: HTTP 429 for https://boingg.in/products/hotdog",
-    "Failed product page https://boingg.in/products/hipster-study-table: HTTP 429 for https://boingg.in/products/hipster-study-table",
-    "Failed product page https://boingg.in/products/imagination-playground-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/imagination-playground-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/joy-ride-chest-of-drawer-cabinet: HTTP 429 for https://boingg.in/products/joy-ride-chest-of-drawer-cabinet",
-    "Failed product page https://boingg.in/products/ice-cream-hooks: HTTP 429 for https://boingg.in/products/ice-cream-hooks",
-    "Failed product page https://boingg.in/products/little-hut-bed: HTTP 429 for https://boingg.in/products/little-hut-bed",
-    "Failed product page https://boingg.in/products/joy-ride-storage-cabinet: HTTP 429 for https://boingg.in/products/joy-ride-storage-cabinet",
-    "Failed product page https://boingg.in/products/carry-stowaway-storage: HTTP 429 for https://boingg.in/products/carry-stowaway-storage",
-    "Failed product page https://boingg.in/products/little-luxury-chair: HTTP 429 for https://boingg.in/products/little-luxury-chair",
-    "Failed product page https://boingg.in/products/little-monsters-chest-of-drawer-cabinet: HTTP 429 for https://boingg.in/products/little-monsters-chest-of-drawer-cabinet",
-    "Failed product page https://boingg.in/products/stand-tall-storage-unit: HTTP 429 for https://boingg.in/products/stand-tall-storage-unit",
-    "Failed product page https://boingg.in/products/lullaby-nursing-chair: HTTP 429 for https://boingg.in/products/lullaby-nursing-chair",
-    "Failed product page https://boingg.in/products/little-monsters-storage-cabinet: HTTP 429 for https://boingg.in/products/little-monsters-storage-cabinet",
-    "Failed product page https://boingg.in/products/mango-duet-bunk-bed: HTTP 429 for https://boingg.in/products/mango-duet-bunk-bed",
-    "Failed product page https://boingg.in/products/martys-sofa: HTTP 429 for https://boingg.in/products/martys-sofa",
-    "Failed product page https://boingg.in/products/maximus-study-table: HTTP 429 for https://boingg.in/products/maximus-study-table",
-    "Failed product page https://boingg.in/products/megatron-bed: HTTP 429 for https://boingg.in/products/megatron-bed",
-    "Failed product page https://boingg.in/products/noahs-ark-wardrode: HTTP 429 for https://boingg.in/products/noahs-ark-wardrode",
-    "Failed product page https://boingg.in/products/pattern-dreams-bunk-bed: HTTP 429 for https://boingg.in/products/pattern-dreams-bunk-bed",
-    "Failed product page https://boingg.in/products/optimusprime-bed: HTTP 429 for https://boingg.in/products/optimusprime-bed",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-13: HTTP 429 for https://boingg.in/products/happy-camper-sofa-13",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-14: HTTP 429 for https://boingg.in/products/happy-camper-sofa-14",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-12: HTTP 429 for https://boingg.in/products/happy-camper-sofa-12",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-9: HTTP 429 for https://boingg.in/products/happy-camper-sofa-9",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-3: HTTP 429 for https://boingg.in/products/happy-camper-sofa-3",
-    "Failed product page https://boingg.in/products/happy-camper-sofa-8: HTTP 429 for https://boingg.in/products/happy-camper-sofa-8",
-    "Failed product page https://boingg.in/products/lil-nino-storage-unit: HTTP 429 for https://boingg.in/products/lil-nino-storage-unit",
-    "Failed product page https://boingg.in/products/beetle-trundle-bed: HTTP 429 for https://boingg.in/products/beetle-trundle-bed",
-    "Failed product page https://boingg.in/products/big-nino-storage-unit: HTTP 429 for https://boingg.in/products/big-nino-storage-unit",
-    "Failed product page https://boingg.in/products/choc-o-block-storage-unit-copy: HTTP 429 for https://boingg.in/products/choc-o-block-storage-unit-copy",
-    "Failed product page https://boingg.in/products/growing-up-storage-unit: HTTP 429 for https://boingg.in/products/growing-up-storage-unit",
-    "Failed product page https://boingg.in/products/building-blocks-storage-unit: HTTP 429 for https://boingg.in/products/building-blocks-storage-unit",
-    "Failed product page https://boingg.in/products/kindergarten-storage-unit: HTTP 429 for https://boingg.in/products/kindergarten-storage-unit",
-    "Failed product page https://boingg.in/products/hello-spring-cabinet-storage: HTTP 429 for https://boingg.in/products/hello-spring-cabinet-storage",
-    "Failed product page https://boingg.in/products/fly-away-cabinet-storage: HTTP 429 for https://boingg.in/products/fly-away-cabinet-storage",
-    "Failed product page https://boingg.in/products/toy-buddy-cabinet-storage: HTTP 429 for https://boingg.in/products/toy-buddy-cabinet-storage",
-    "Failed product page https://boingg.in/products/geometric-cabinet-storage: HTTP 429 for https://boingg.in/products/geometric-cabinet-storage",
-    "Failed product page https://boingg.in/products/sea-wonders-cabinet-storage: HTTP 429 for https://boingg.in/products/sea-wonders-cabinet-storage",
-    "Failed product page https://boingg.in/products/traffic-lights-cabinet-storage: HTTP 429 for https://boingg.in/products/traffic-lights-cabinet-storage",
-    "Failed product page https://boingg.in/products/lions-den-cabinet-storage: HTTP 429 for https://boingg.in/products/lions-den-cabinet-storage",
-    "Failed product page https://boingg.in/products/unicorns-playground-cabinet-storage: HTTP 429 for https://boingg.in/products/unicorns-playground-cabinet-storage",
-    "Failed product page https://boingg.in/products/junior-champ-study-table: HTTP 429 for https://boingg.in/products/junior-champ-study-table",
-    "Failed product page https://boingg.in/products/curious-koala-study-table: HTTP 429 for https://boingg.in/products/curious-koala-study-table",
-    "Failed product page https://boingg.in/products/razzmatazz-study-table: HTTP 429 for https://boingg.in/products/razzmatazz-study-table",
-    "Failed product page https://boingg.in/products/elementary-study-table: HTTP 429 for https://boingg.in/products/elementary-study-table",
-    "Failed product page https://boingg.in/products/joy-ride-study-table: HTTP 429 for https://boingg.in/products/joy-ride-study-table",
-    "Failed product page https://boingg.in/products/timeless-table: HTTP 429 for https://boingg.in/products/timeless-table",
-    "Failed product page https://boingg.in/products/scholar-table: HTTP 429 for https://boingg.in/products/scholar-table",
-    "Failed product page https://boingg.in/products/dynamic-duo-study-table: HTTP 429 for https://boingg.in/products/dynamic-duo-study-table",
-    "Failed product page https://boingg.in/products/double-trouble-study-table: HTTP 429 for https://boingg.in/products/double-trouble-study-table",
-    "Failed product page https://boingg.in/products/bumblebee-double-bed: HTTP 429 for https://boingg.in/products/bumblebee-double-bed",
-    "Failed product page https://boingg.in/products/collectedcool-double-bed: HTTP 429 for https://boingg.in/products/collectedcool-double-bed",
-    "Failed product page https://boingg.in/products/pine-tree-single-bunk-bed: HTTP 429 for https://boingg.in/products/pine-tree-single-bunk-bed",
-    "Failed product page https://boingg.in/products/dream-bubble-bed: HTTP 429 for https://boingg.in/products/dream-bubble-bed",
-    "Failed product page https://boingg.in/products/firebird-car-double-bed: HTTP 429 for https://boingg.in/products/firebird-car-double-bed",
-    "Failed product page https://boingg.in/products/colorplay-double-bed: HTTP 429 for https://boingg.in/products/colorplay-double-bed",
-    "Failed product page https://boingg.in/products/flash-double-bed: HTTP 429 for https://boingg.in/products/flash-double-bed",
-    "Failed product page https://boingg.in/products/groovy-love-bed-2: HTTP 429 for https://boingg.in/products/groovy-love-bed-2",
-    "Failed product page https://boingg.in/products/muppets-double-bed: HTTP 429 for https://boingg.in/products/muppets-double-bed",
-    "Failed product page https://boingg.in/products/optimus-prime-double-bed: HTTP 429 for https://boingg.in/products/optimus-prime-double-bed",
-    "Failed product page https://boingg.in/products/shoodle-double-bed: HTTP 429 for https://boingg.in/products/shoodle-double-bed",
-    "Failed product page https://boingg.in/products/snowflake-double-bed: HTTP 429 for https://boingg.in/products/snowflake-double-bed",
-    "Failed product page https://boingg.in/products/street-car-double-bed: HTTP 429 for https://boingg.in/products/street-car-double-bed",
-    "Failed product page https://boingg.in/products/caravan-trundle-bunk-bed: HTTP 429 for https://boingg.in/products/caravan-trundle-bunk-bed",
-    "Failed product page https://boingg.in/products/cloud-tails-trundle-bed: HTTP 429 for https://boingg.in/products/cloud-tails-trundle-bed",
-    "Failed product page https://boingg.in/products/firebird-trundle-bed: HTTP 429 for https://boingg.in/products/firebird-trundle-bed",
-    "Failed product page https://boingg.in/products/dreampod-trundle-bed: HTTP 429 for https://boingg.in/products/dreampod-trundle-bed",
-    "Failed product page https://boingg.in/products/pinwheels-trundle-bunk-bed: HTTP 429 for https://boingg.in/products/pinwheels-trundle-bunk-bed",
-    "Failed product page https://boingg.in/products/fluffball-upholstered-single-bed: HTTP 429 for https://boingg.in/products/fluffball-upholstered-single-bed",
-    "Failed product page https://boingg.in/products/play-house-bunk-bed-with-slide: HTTP 429 for https://boingg.in/products/play-house-bunk-bed-with-slide",
-    "Failed product page https://boingg.in/products/castle-play-house-bunk-bed-with-slide-copy: HTTP 429 for https://boingg.in/products/castle-play-house-bunk-bed-with-slide-copy",
-    "Failed product page https://boingg.in/products/cottonball-upholstered-queen-sized-bed-with-storage: HTTP 429 for https://boingg.in/products/cottonball-upholstered-queen-sized-bed-with-storage",
-    "Failed product page https://boingg.in/products/barney-corner-storage: HTTP 429 for https://boingg.in/products/barney-corner-storage",
-    "Failed product page https://boingg.in/products/soccer-mania-double-bed: HTTP 429 for https://boingg.in/products/soccer-mania-double-bed",
-    "Failed product page https://boingg.in/products/dino-playground-toy-storage: HTTP 429 for https://boingg.in/products/dino-playground-toy-storage",
-    "Failed product page https://boingg.in/products/tubby-corner-storage: HTTP 429 for https://boingg.in/products/tubby-corner-storage",
-    "Failed product page https://boingg.in/products/dino-tails-shelf-storage: HTTP 429 for https://boingg.in/products/dino-tails-shelf-storage",
-    "Failed product page https://boingg.in/products/toddlers-clever-fox-activity-table: HTTP 429 for https://boingg.in/products/toddlers-clever-fox-activity-table",
-    "Failed product page https://boingg.in/products/cloudy-night-corner-storage: HTTP 429 for https://boingg.in/products/cloudy-night-corner-storage",
-    "Failed product page https://boingg.in/products/toddlers-deo-eyed-activity-table: HTTP 429 for https://boingg.in/products/toddlers-deo-eyed-activity-table",
-    "Failed product page https://boingg.in/products/toddlers-panda-licious-activity-table: HTTP 429 for https://boingg.in/products/toddlers-panda-licious-activity-table",
-    "Failed product page https://boingg.in/products/toddlers-jungle-king-activity-table: HTTP 429 for https://boingg.in/products/toddlers-jungle-king-activity-table",
-    "Failed product page https://boingg.in/products/toddlers-pine-tree-bed: HTTP 429 for https://boingg.in/products/toddlers-pine-tree-bed",
-    "Failed product page https://boingg.in/products/rainbow-bunk-bed: HTTP 429 for https://boingg.in/products/rainbow-bunk-bed",
-    "Failed product page https://boingg.in/products/tree-fort-bunk-bed: HTTP 429 for https://boingg.in/products/tree-fort-bunk-bed",
-    "Failed product page https://boingg.in/products/play-house-trundle-bunk-bed: HTTP 429 for https://boingg.in/products/play-house-trundle-bunk-bed",
-    "Failed product page https://boingg.in/products/boingg-gift-card: HTTP 429 for https://boingg.in/products/boingg-gift-card",
-    "Failed product page https://boingg.in/products/rainbow-set-of-3: HTTP 429 for https://boingg.in/products/rainbow-set-of-3",
-    "Failed product page https://boingg.in/products/stingo-plushie-cushion: HTTP 429 for https://boingg.in/products/stingo-plushie-cushion",
-    "Failed product page https://boingg.in/products/buzzzzz-plushie-cushion: HTTP 429 for https://boingg.in/products/buzzzzz-plushie-cushion",
-    "Failed product page https://boingg.in/products/unicorn-magic-plushie-cushion: HTTP 429 for https://boingg.in/products/unicorn-magic-plushie-cushion",
-    "Failed product page https://boingg.in/products/rowwwrrr-plushie-cushion: HTTP 429 for https://boingg.in/products/rowwwrrr-plushie-cushion",
-    "Failed product page https://boingg.in/products/axolotl-plushie-cushion: HTTP 429 for https://boingg.in/products/axolotl-plushie-cushion",
-    "Failed product page https://boingg.in/products/fuzzbert-plushie-cushion: HTTP 429 for https://boingg.in/products/fuzzbert-plushie-cushion",
-    "Failed product page https://boingg.in/products/narwhal-plushie-cushion: HTTP 429 for https://boingg.in/products/narwhal-plushie-cushion",
-    "Failed product page https://boingg.in/products/mushroom-plushie-cushion: HTTP 429 for https://boingg.in/products/mushroom-plushie-cushion",
-    "Failed product page https://boingg.in/products/penguin-extendable-bed: HTTP 429 for https://boingg.in/products/penguin-extendable-bed",
-    "Failed product page https://boingg.in/products/panda-toddlers-trundle-bed: HTTP 429 for https://boingg.in/products/panda-toddlers-trundle-bed",
-    "Failed product page https://boingg.in/products/spaceosaurus-bookshelf-storage: HTTP 429 for https://boingg.in/products/spaceosaurus-bookshelf-storage",
-    "Failed product page https://boingg.in/products/mollycoddle-single-bed: HTTP 429 for https://boingg.in/products/mollycoddle-single-bed",
-    "Failed product page https://boingg.in/products/candyland-upholstered-single-bed: HTTP 429 for https://boingg.in/products/candyland-upholstered-single-bed",
-    "Failed product page https://boingg.in/products/rainbow-wall-print: HTTP 429 for https://boingg.in/products/rainbow-wall-print",
-    "Failed product page https://boingg.in/products/kindness-wall-print: HTTP 429 for https://boingg.in/products/kindness-wall-print",
-    "Failed product page https://boingg.in/products/windchime-double-bed: HTTP 429 for https://boingg.in/products/windchime-double-bed",
-    "Failed product page https://boingg.in/products/monkey-wall-print: HTTP 429 for https://boingg.in/products/monkey-wall-print",
-    "Failed product page https://boingg.in/products/elephant-wall-print: HTTP 429 for https://boingg.in/products/elephant-wall-print",
-    "Failed product page https://boingg.in/products/toucan-wall-print: HTTP 429 for https://boingg.in/products/toucan-wall-print",
-    "Failed product page https://boingg.in/products/sunshine-wall-print: HTTP 429 for https://boingg.in/products/sunshine-wall-print",
-    "Failed product page https://boingg.in/products/girl-power-wall-print: HTTP 429 for https://boingg.in/products/girl-power-wall-print",
-    "Failed product page https://boingg.in/products/tiger-wall-print: HTTP 429 for https://boingg.in/products/tiger-wall-print",
-    "Failed product page https://boingg.in/products/fox-wall-print: HTTP 429 for https://boingg.in/products/fox-wall-print",
-    "Failed product page https://boingg.in/products/fun-wall-print: HTTP 429 for https://boingg.in/products/fun-wall-print",
-    "Failed product page https://boingg.in/products/books-wall-print: HTTP 429 for https://boingg.in/products/books-wall-print",
-    "Failed product page https://boingg.in/products/be-your-own-wall-print: HTTP 429 for https://boingg.in/products/be-your-own-wall-print",
-    "Failed product page https://boingg.in/products/animals-wall-print: HTTP 429 for https://boingg.in/products/animals-wall-print",
-    "Failed product page https://boingg.in/products/houses-wall-print: HTTP 429 for https://boingg.in/products/houses-wall-print",
-    "Failed product page https://boingg.in/products/boingg-crib-size-hr-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic: HTTP 429 for https://boingg.in/products/boingg-crib-size-hr-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic",
-    "Failed product page https://boingg.in/products/boingg-crib-size-natural-latex-hr-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic: HTTP 429 for https://boingg.in/products/boingg-crib-size-natural-latex-hr-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic",
-    "Failed product page https://boingg.in/products/boingg-crib-size-bonded-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic: HTTP 429 for https://boingg.in/products/boingg-crib-size-bonded-foam-mattress-anti-bacteria-aloe-vera-treated-hypoallergenic",
-    "Failed product page https://boingg.in/products/smooth-sail-study-table: HTTP 429 for https://boingg.in/products/smooth-sail-study-table",
-    "Failed product page https://boingg.in/products/merry-vault: HTTP 429 for https://boingg.in/products/merry-vault",
-    "Failed product page https://boingg.in/products/simply-perfect-trundle-bed-with-mechanism: HTTP 429 for https://boingg.in/products/simply-perfect-trundle-bed-with-mechanism",
-    "Failed product page https://boingg.in/products/brightside-trundle-bed: HTTP 429 for https://boingg.in/products/brightside-trundle-bed",
-    "Failed product page https://boingg.in/products/simply-perfect-trundle-bed: HTTP 429 for https://boingg.in/products/simply-perfect-trundle-bed",
-    "Failed product page https://boingg.in/products/brightside-trundle-bed-with-mechanism: HTTP 429 for https://boingg.in/products/brightside-trundle-bed-with-mechanism",
-    "Failed product page https://boingg.in/products/camping-out-trundle-bed-1: HTTP 429 for https://boingg.in/products/camping-out-trundle-bed-1",
-    "Failed product page https://boingg.in/products/corner-office-trundle-bed-2: HTTP 429 for https://boingg.in/products/corner-office-trundle-bed-2",
-    "Failed product page https://boingg.in/products/camping-out-trundle-bed-with-mechanism: HTTP 429 for https://boingg.in/products/camping-out-trundle-bed-with-mechanism",
-    "Failed product page https://boingg.in/products/street-car-trundle-bed-1: HTTP 429 for https://boingg.in/products/street-car-trundle-bed-1",
-    "Failed product page https://boingg.in/products/pine-tree-teen-bunk-bed: HTTP 429 for https://boingg.in/products/pine-tree-teen-bunk-bed",
-    "Failed product page https://boingg.in/products/pinwheels-teen-storage-bunk-bed: HTTP 429 for https://boingg.in/products/pinwheels-teen-storage-bunk-bed",
-    "Failed product page https://boingg.in/products/sleep-n-slide-bunk-bed: HTTP 429 for https://boingg.in/products/sleep-n-slide-bunk-bed",
-    "Failed product page https://boingg.in/products/toddlers-playdate-loft-bed: HTTP 429 for https://boingg.in/products/toddlers-playdate-loft-bed",
-    "Failed product page https://boingg.in/products/camping-out-bed-kids: HTTP 429 for https://boingg.in/products/camping-out-bed-kids",
-    "Failed product page https://boingg.in/products/windchime-bed-toddlers: HTTP 429 for https://boingg.in/products/windchime-bed-toddlers",
-    "Failed product page https://boingg.in/products/bunny-chair: HTTP 429 for https://boingg.in/products/bunny-chair",
-    "Failed product page https://boingg.in/products/workstation-study-table-teens: HTTP 429 for https://boingg.in/products/workstation-study-table-teens",
-    "Failed product page https://boingg.in/products/optimus-prime-bed: HTTP 429 for https://boingg.in/products/optimus-prime-bed",
-    "Failed product page https://boingg.in/products/handy-dandy-storage-cabinet-teens: HTTP 429 for https://boingg.in/products/handy-dandy-storage-cabinet-teens",
-    "Failed product page https://boingg.in/products/color-block-teen-study-table: HTTP 429 for https://boingg.in/products/color-block-teen-study-table",
-    "Failed product page https://boingg.in/products/artist-teen-study-table: HTTP 429 for https://boingg.in/products/artist-teen-study-table",
-    "Failed product page https://boingg.in/products/sun-and-moon-bookends: HTTP 429 for https://boingg.in/products/sun-and-moon-bookends",
-    "Failed product page https://boingg.in/products/color-play-bed: HTTP 429 for https://boingg.in/products/color-play-bed",
-    "Failed product page https://boingg.in/products/flower-bookends: HTTP 429 for https://boingg.in/products/flower-bookends",
-    "Failed product page https://boingg.in/products/bear-bookends: HTTP 429 for https://boingg.in/products/bear-bookends",
-    "Failed product page https://boingg.in/products/dino-hooks: HTTP 429 for https://boingg.in/products/dino-hooks",
-    "Failed product page https://boingg.in/products/handy-dandy-storage-cabinet: HTTP 429 for https://boingg.in/products/handy-dandy-storage-cabinet",
-    "Failed product page https://boingg.in/products/topolino-study-table: HTTP 429 for https://boingg.in/products/topolino-study-table",
-    "Failed product page https://boingg.in/products/slide-n-store-toy-storage-box: HTTP 429 for https://boingg.in/products/slide-n-store-toy-storage-box",
-    "Failed product page https://boingg.in/products/curve-ball-study-table: HTTP 429 for https://boingg.in/products/curve-ball-study-table",
-    "Failed product page https://boingg.in/products/color-play-study-table: HTTP 429 for https://boingg.in/products/color-play-study-table",
-    "Failed product page https://boingg.in/products/batty-bed: HTTP 429 for https://boingg.in/products/batty-bed",
-    "Failed product page https://boingg.in/products/ariel-mirror: HTTP 429 for https://boingg.in/products/ariel-mirror",
-    "Failed product page https://boingg.in/products/pot-of-gold-mirror: HTTP 429 for https://boingg.in/products/pot-of-gold-mirror",
-    "Failed product page https://boingg.in/products/liftoff-mirror: HTTP 429 for https://boingg.in/products/liftoff-mirror",
-    "Failed product page https://boingg.in/products/baloo-mirror: HTTP 429 for https://boingg.in/products/baloo-mirror",
-    "Failed product page https://boingg.in/products/rose-bird-curtains: HTTP 429 for https://boingg.in/products/rose-bird-curtains",
-    "Failed product page https://boingg.in/products/cutezilla-mirror: HTTP 429 for https://boingg.in/products/cutezilla-mirror",
-    "Failed product page https://boingg.in/products/stork-alert-curtain: HTTP 429 for https://boingg.in/products/stork-alert-curtain",
-    "Failed product page https://boingg.in/products/sunshine-curtains: HTTP 429 for https://boingg.in/products/sunshine-curtains",
-    "Failed product page https://boingg.in/products/dino-den-curtain: HTTP 429 for https://boingg.in/products/dino-den-curtain",
-    "Failed product page https://boingg.in/products/vibgyor-curtain: HTTP 429 for https://boingg.in/products/vibgyor-curtain",
-    "Failed product page https://boingg.in/products/mint-chip-curtain: HTTP 429 for https://boingg.in/products/mint-chip-curtain",
-    "Failed product page https://boingg.in/products/alaska-curtain: HTTP 429 for https://boingg.in/products/alaska-curtain",
-    "Failed product page https://boingg.in/products/twitterati-curtains: HTTP 429 for https://boingg.in/products/twitterati-curtains",
-    "Failed product page https://boingg.in/products/morning-dew-curtains: HTTP 429 for https://boingg.in/products/morning-dew-curtains",
-    "Failed product page https://boingg.in/products/fish-bowl-curtains: HTTP 429 for https://boingg.in/products/fish-bowl-curtains",
-    "Failed product page https://boingg.in/products/sweet-dream-curtains: HTTP 429 for https://boingg.in/products/sweet-dream-curtains",
-    "Failed product page https://boingg.in/products/sail-away-curtains: HTTP 429 for https://boingg.in/products/sail-away-curtains",
-    "Failed product page https://boingg.in/products/space-age-curtains: HTTP 429 for https://boingg.in/products/space-age-curtains",
-    "Failed product page https://boingg.in/products/sprinkles-n-cream-curtains: HTTP 429 for https://boingg.in/products/sprinkles-n-cream-curtains",
-    "Failed product page https://boingg.in/products/mint-milkshake-curtains: HTTP 429 for https://boingg.in/products/mint-milkshake-curtains",
-    "Failed product page https://boingg.in/products/woodland: HTTP 429 for https://boingg.in/products/woodland",
-    "Failed product page https://boingg.in/products/parachutes: HTTP 503 for https://boingg.in/products/parachutes",
-    "Failed product page https://boingg.in/products/floral: HTTP 503 for https://boingg.in/products/floral",
-    "Failed product page https://boingg.in/products/mosaic: HTTP 503 for https://boingg.in/products/mosaic",
-    "Failed product page https://boingg.in/products/sweet-dreams-set-of-2: HTTP 429 for https://boingg.in/products/sweet-dreams-set-of-2",
-    "Failed product page https://boingg.in/products/circus-circus: HTTP 429 for https://boingg.in/products/circus-circus",
-    "Failed product page https://boingg.in/products/color-block-set-of-2: HTTP 429 for https://boingg.in/products/color-block-set-of-2",
-    "Failed product page https://boingg.in/products/pinwheels-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/pinwheels-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/pinwheels-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/pinwheels-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/color-block-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/color-block-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/stripes-and-spots-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/stripes-and-spots-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/stripes-and-spots-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/stripes-and-spots-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/rainbow-set-of-2: HTTP 429 for https://boingg.in/products/rainbow-set-of-2",
-    "Failed product page https://boingg.in/products/stripes-and-spots-set-of-2: HTTP 429 for https://boingg.in/products/stripes-and-spots-set-of-2",
-    "Failed product page https://boingg.in/products/stripes-and-spots-set-of-3: HTTP 429 for https://boingg.in/products/stripes-and-spots-set-of-3",
-    "Failed product page https://boingg.in/products/pinwheels-set-of-2: HTTP 429 for https://boingg.in/products/pinwheels-set-of-2",
-    "Failed product page https://boingg.in/products/pinwheels-set-of-3: HTTP 429 for https://boingg.in/products/pinwheels-set-of-3",
-    "Failed product page https://boingg.in/products/imagination-playground-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/imagination-playground-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/colour-block-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/colour-block-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/sweet-dreams-set-of-3: HTTP 429 for https://boingg.in/products/sweet-dreams-set-of-3",
-    "Failed product page https://boingg.in/products/canary-crib-make-your-own: HTTP 429 for https://boingg.in/products/canary-crib-make-your-own",
-    "Failed product page https://boingg.in/products/colour-block-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/colour-block-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/bed-buddy-bedside-table: HTTP 429 for https://boingg.in/products/bed-buddy-bedside-table",
-    "Failed product page https://boingg.in/products/wild-things-bedside-table: HTTP 429 for https://boingg.in/products/wild-things-bedside-table",
-    "Failed product page https://boingg.in/products/sit-n-box-storage-cabinet: HTTP 429 for https://boingg.in/products/sit-n-box-storage-cabinet",
-    "Failed product page https://boingg.in/products/cubicle-study-table: HTTP 429 for https://boingg.in/products/cubicle-study-table",
-    "Failed product page https://boingg.in/products/pattern-play-study-table: HTTP 429 for https://boingg.in/products/pattern-play-study-table",
-    "Failed product page https://boingg.in/products/toy-story-storage-cabinet: HTTP 429 for https://boingg.in/products/toy-story-storage-cabinet",
-    "Failed product page https://boingg.in/products/mr-practical-study-table: HTTP 429 for https://boingg.in/products/mr-practical-study-table",
-    "Failed product page https://boingg.in/products/mosaic-pink: HTTP 429 for https://boingg.in/products/mosaic-pink",
-    "Failed product page https://boingg.in/products/street-car-bed: HTTP 429 for https://boingg.in/products/street-car-bed",
-    "Failed product page https://boingg.in/products/circus-circus-pink: HTTP 429 for https://boingg.in/products/circus-circus-pink",
-    "Failed product page https://boingg.in/products/mosaic-green: HTTP 429 for https://boingg.in/products/mosaic-green",
-    "Failed product page https://boingg.in/products/circus-circus-light: HTTP 429 for https://boingg.in/products/circus-circus-light",
-    "Failed product page https://boingg.in/products/airborne-light-blue: HTTP 429 for https://boingg.in/products/airborne-light-blue",
-    "Failed product page https://boingg.in/products/airborne-light-grey: HTTP 429 for https://boingg.in/products/airborne-light-grey",
-    "Failed product page https://boingg.in/products/flower-bed-blue: HTTP 429 for https://boingg.in/products/flower-bed-blue",
-    "Failed product page https://boingg.in/products/dreambubble-bed: HTTP 429 for https://boingg.in/products/dreambubble-bed",
-    "Failed product page https://boingg.in/products/transformer-height-adjustable-teen-study-table: HTTP 429 for https://boingg.in/products/transformer-height-adjustable-teen-study-table",
-    "Failed product page https://boingg.in/products/catnap-bed: HTTP 429 for https://boingg.in/products/catnap-bed",
-    "Failed product page https://boingg.in/products/corner-office-bed: HTTP 429 for https://boingg.in/products/corner-office-bed",
-    "Failed product page https://boingg.in/products/simply-perfect-bed: HTTP 429 for https://boingg.in/products/simply-perfect-bed",
-    "Failed product page https://boingg.in/products/cloud-tails-bed: HTTP 429 for https://boingg.in/products/cloud-tails-bed",
-    "Failed product page https://boingg.in/products/pattern-dreams-set-of-2-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/pattern-dreams-set-of-2-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/slumber-party-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/slumber-party-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/pattern-dreams-set-of-2: HTTP 429 for https://boingg.in/products/pattern-dreams-set-of-2",
-    "Failed product page https://boingg.in/products/fruit-salad-set-of-2: HTTP 429 for https://boingg.in/products/fruit-salad-set-of-2",
-    "Failed product page https://boingg.in/products/traffic-jam-set-of-2: HTTP 429 for https://boingg.in/products/traffic-jam-set-of-2",
-    "Failed product page https://boingg.in/products/slumber-party-set-of-2: HTTP 429 for https://boingg.in/products/slumber-party-set-of-2",
-    "Failed product page https://boingg.in/products/autumn-rain-set-of-3: HTTP 429 for https://boingg.in/products/autumn-rain-set-of-3",
-    "Failed product page https://boingg.in/products/autumn-rain-set-of-bedsheet-pillow-cover: HTTP 429 for https://boingg.in/products/autumn-rain-set-of-bedsheet-pillow-cover",
-    "Failed product page https://boingg.in/products/fruit-salad-set-of-3: HTTP 429 for https://boingg.in/products/fruit-salad-set-of-3",
-    "Failed product page https://boingg.in/products/traffic-jam-set-of-3: HTTP 429 for https://boingg.in/products/traffic-jam-set-of-3",
-    "Failed product page https://boingg.in/products/pattern-dreams-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/pattern-dreams-set-of-bedsheet-duvet-cover-pillow-cover",
-    "Failed product page https://boingg.in/products/pattern-dreams-set-of-3: HTTP 429 for https://boingg.in/products/pattern-dreams-set-of-3",
-    "Failed product page https://boingg.in/products/slumber-party-set-of-bedsheet-duvet-cover-pillow-cover: HTTP 429 for https://boingg.in/products/slumber-party-set-of-bedsheet-duvet-cover-pillow-cover",
-    "insert: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\""
-  ],
-  "durationMs": 135876
-}
+complete_schema_sql
+"create table public.ab_experiments (id uuid not null, user_id uuid not null, product_id uuid not null, pin_a_id uuid not null, pin_b_id uuid not null, aesthetic_a text not null, aesthetic_b text not null, status text not null, winner text, started_at timestamp with time zone not null, concluded_at timestamp with time zone, metrics_a jsonb not null, metrics_b jsonb not null, created_at timestamp with time zone not null);
 
+create table public.account_health_log (id uuid not null, user_id uuid not null, pinterest_connection_id uuid not null, pins_today integer not null, pins_this_week integer not null, url_pins_this_week integer not null, warmup_phase text not null, warmup_day integer not null, shadow_ban_risk text not null, checked_at timestamp with time zone not null);
 
+create table public.brand_settings (id uuid not null, user_id uuid not null, brand_name text not null, brand_description text, store_url text, logo_url text, font_choice text not null, aesthetic_boundaries jsonb, created_at timestamp with time zone not null, updated_at timestamp with time zone not null, automation_paused boolean, autopilot_enabled boolean, account_age_type text, pin_layout_mode text, is_account_warmed_up boolean, last_notified_at timestamp with time zone, default_board_id text, show_brand_url boolean not null);
 
-## 2nd store attempt
+create table public.catalog_stores (id uuid not null, user_id uuid not null, brand_settings_id uuid, canonical_url text not null, platform text not null, sync_status text not null, last_synced_at timestamp with time zone, last_started_at timestamp with time zone, last_error text, product_count integer not null, sitemap_url text, sitemap_fingerprint text, sitemap_product_count integer, sitemap_urls_sample ARRAY, last_extractor_used text, robots_allowed boolean, created_at timestamp with time zone not null, updated_at timestamp with time zone not null);
 
-{
-  "storeId": "cb5cf303-ace1-4bda-9aee-086e0bc3fbd3",
-  "canonicalUrl": "https://magneticme.com",
-  "platform": "shopify",
-  "extractorUsed": "sitemap_jsonld",
-  "status": "partial",
-  "productsSeen": 376,
-  "inserted": 0,
-  "updated": 0,
-  "unchanged": 0,
-  "unavailable": 0,
-  "pagesFetched": 382,
-  "sitemapShortCircuited": false,
-  "warnings": [
-    "Sitemap has 969 product URLs; crawling first 400",
-    "Failed product page https://magneticme.com/products/magnetic-tutu-dress-disney-spooky: HTTP 429 for https://magneticme.com/products/magnetic-tutu-dress-disney-spooky",
-    "Failed product page https://magneticme.com/products/magnetic-footie-love-deerly: HTTP 429 for https://magneticme.com/products/magnetic-footie-love-deerly",
-    "Failed product page https://magneticme.com/products/magnetic-footie-born-to-run: HTTP 429 for https://magneticme.com/products/magnetic-footie-born-to-run",
-    "Failed product page https://magneticme.com/products/magnetic-footie-disney-spooky: HTTP 429 for https://magneticme.com/products/magnetic-footie-disney-spooky",
-    "Failed product page https://magneticme.com/products/magnetic-footie-wtwta: HTTP 429 for https://magneticme.com/products/magnetic-footie-wtwta",
-    "Failed product page https://magneticme.com/products/magnetic-nightgown-born-to-run: HTTP 429 for https://magneticme.com/products/magnetic-nightgown-born-to-run",
-    "Failed product page https://magneticme.com/products/newborn-hat-doeskin-tan: HTTP 429 for https://magneticme.com/products/newborn-hat-doeskin-tan",
-    "Failed product page https://magneticme.com/products/newborn-hat-chelsea: HTTP 429 for https://magneticme.com/products/newborn-hat-chelsea",
-    "Failed product page https://magneticme.com/products/newborn-hat-pin-dot-pink: HTTP 429 for https://magneticme.com/products/newborn-hat-pin-dot-pink",
-    "Failed product page https://magneticme.com/products/magnetic-open-gown-hat-cream-jolie-giraffe: HTTP 429 for https://magneticme.com/products/magnetic-open-gown-hat-cream-jolie-giraffe",
-    "Failed product page https://magneticme.com/products/magnetic-footie-cream-jolie-giraffe: HTTP 429 for https://magneticme.com/products/magnetic-footie-cream-jolie-giraffe",
-    "Failed product page https://magneticme.com/products/magnetic-footie-pink-jolie-giraffe: HTTP 429 for https://magneticme.com/products/magnetic-footie-pink-jolie-giraffe",
-    "Failed product page https://magneticme.com/products/magnetic-open-gown-hat-pink-jolie-giraffe: HTTP 429 for https://magneticme.com/products/magnetic-open-gown-hat-pink-jolie-giraffe",
-    "Failed product page https://magneticme.com/products/magnetic-take-me-home-pink-jolie-giraffe: HTTP 429 for https://magneticme.com/products/magnetic-take-me-home-pink-jolie-giraffe",
-    "Failed product page https://magneticme.com/products/magnetic-convertible-coverall-red-game-day: HTTP 429 for https://magneticme.com/products/magnetic-convertible-coverall-red-game-day",
-    "Failed product page https://magneticme.com/products/magnetic-convertible-coverall-blue-game-day: HTTP 429 for https://magneticme.com/products/magnetic-convertible-coverall-blue-game-day",
-    "Failed product page https://magneticme.com/products/magnetic-dress-legging-set-doodle-pop: HTTP 429 for https://magneticme.com/products/magnetic-dress-legging-set-doodle-pop",
-    "Failed product page https://magneticme.com/products/mens-cwat-pj-set-its-a-winterful-life: HTTP 429 for https://magneticme.com/products/mens-cwat-pj-set-its-a-winterful-life",
-    "Failed product page https://magneticme.com/products/magnetic-baby-set-lookin-so-crazy-in-love: HTTP 429 for https://magneticme.com/products/magnetic-baby-set-lookin-so-crazy-in-love",
-    "Failed product page https://magneticme.com/products/baby-blanket-gliding-through-life: HTTP 429 for https://magneticme.com/products/baby-blanket-gliding-through-life",
-    "Failed product page https://magneticme.com/products/baby-blanket-tiny-diny: HTTP 429 for https://magneticme.com/products/baby-blanket-tiny-diny",
-    "Failed product page https://magneticme.com/products/baby-blanket-disney-moments: HTTP 429 for https://magneticme.com/products/baby-blanket-disney-moments",
-    "Failed product page https://magneticme.com/products/magnetic-baby-pj-disney-moments-with-friends: HTTP 429 for https://magneticme.com/products/magnetic-baby-pj-disney-moments-with-friends",
-    "Failed product page https://magneticme.com/products/magnetic-nightgown-wtwta: HTTP 429 for https://magneticme.com/products/magnetic-nightgown-wtwta",
-    "insert: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\"",
-    "insert row: new row for relation \"products\" violates check constraint \"products_source_check\""
-  ],
-  "durationMs": 380858
-}
+create table public.catalog_sync_runs (id uuid not null, catalog_store_id uuid not null, user_id uuid not null, trigger_source text not null, status text not null, extractor_used text, products_seen integer not null, products_inserted integer not null, products_updated integer not null, products_unchanged integer not null, products_unavailable integer not null, pages_fetched integer not null, sitemap_short_circuited boolean not null, error_message text, started_at timestamp with time zone not null, finished_at timestamp with time zone, meta jsonb not null);
+
+create table public.credits (id bigint not null, created_at timestamp with time zone not null, credits numeric not null, user_id uuid not null);
+
+create table public.dodo_payments (id uuid not null, created_at timestamp with time zone not null, user_id uuid not null, dodo_payment_id text not null, dodo_checkout_session_id text, pricing_plan_id uuid not null, amount numeric not null, currency text not null, status text not null, credits integer not null, metadata jsonb);
+
+create table public.dodo_pricing_plans (id uuid not null, created_at timestamp with time zone not null, updated_at timestamp with time zone not null, name text not null, description text, price numeric not null, credits integer not null, currency text not null, dodo_product_id text, is_active boolean not null, metadata jsonb);
+
+create table public.dodo_subscription_changes (id uuid not null, created_at timestamp with time zone not null, user_id uuid not null, from_plan_id uuid, to_plan_id uuid, checkout_session_id text, status text not null, change_type text not null, reason text, completed_at timestamp with time zone, error_message text, metadata jsonb);
+
+create table public.dodo_subscriptions (id uuid not null, created_at timestamp with time zone not null, updated_at timestamp with time zone not null, user_id uuid not null, dodo_subscription_id text, pricing_plan_id uuid not null, status text not null, metadata jsonb, cancel_at_period_end boolean not null, current_period_end timestamp with time zone, next_billing_date timestamp with time zone, canceled_at timestamp with time zone, price_snapshot bigint, currency_snapshot text);
+
+create table public.dodo_webhook_events (id uuid not null, created_at timestamp with time zone not null, dodo_event_id text not null, event_type text not null, processed boolean not null, processed_at timestamp with time zone, data jsonb not null, error_message text, retry_count integer not null);
+
+create table public.etsy_connections (id uuid not null, user_id uuid not null, shop_id text, shop_name text, access_token text not null, refresh_token text, expires_at timestamp with time zone, created_at timestamp with time zone not null, updated_at timestamp with time zone not null);
+
+create table public.pin_analytics_snapshots (id uuid not null, pin_id uuid not null, user_id uuid not null, impressions integer not null, outbound_clicks integer not null, saves integer not null, snapshot_date date not null, created_at timestamp with time zone not null);
+
+create table public.pin_queue (id uuid not null, user_id uuid not null, pin_id uuid not null, scheduled_for timestamp with time zone, priority integer not null, status text not null, published_at timestamp with time zone, created_at timestamp with time zone not null);
+
+create table public.pin_rejections (id uuid not null, pin_id uuid not null, user_id uuid not null, reason text not null, created_at timestamp with time zone);
+
+create table public.pins (id uuid not null, user_id uuid not null, product_id uuid, brand_settings_id uuid, art_director_prompt text, template_id text, generated_image_url text, generated_image_r2_key text, rendered_image_url text, rendered_image_r2_key text, pin_title text, pin_description text, pinterest_pin_id text, pinterest_board_id text, published_at timestamp with time zone, pin_url text, has_outbound_link boolean not null, outbound_clicks integer not null, impressions integer not null, saves integer not null, last_analytics_at timestamp with time zone, status text not null, error_message text, created_at timestamp with time zone not null, updated_at timestamp with time zone not null, target_angle text, angle_embedding USER-DEFINED, is_mood_board boolean, aesthetic_tag text);
+
+create table public.pinterest_connections (id uuid not null, user_id uuid not null, pinterest_user_id text, access_token text not null, refresh_token text, expires_at timestamp with time zone, account_age_days integer, trust_score numeric, warmup_phase text not null, created_at timestamp with time zone not null, updated_at timestamp with time zone not null);
+
+create table public.products (id uuid not null, user_id uuid not null, brand_settings_id uuid, source text not null, source_product_id text, title text not null, description text, price numeric, currency text, product_url text, image_url text, image_r2_key text, tags ARRAY, is_active boolean not null, created_at timestamp with time zone not null, updated_at timestamp with time zone not null, handle text, catalog_store_id uuid, platform_product_id text, sku text, content_hash text, last_seen_at timestamp with time zone, missing_sync_count integer not null, lifecycle_status text not null, marketed boolean not null, marketing_priority integer not null);
+
+create table public.profiles (id uuid not null, email text, credits_remaining integer, subscription_tier text, created_at timestamp with time zone, updated_at timestamp with time zone, default_brand_id uuid);
+
+create table public.prompt_weights (id uuid not null, user_id uuid not null, brand_settings_id uuid, prompt_template text not null, aesthetic_tags ARRAY, weight numeric not null, total_pins_used integer not null, total_clicks integer not null, avg_click_rate numeric not null, created_at timestamp with time zone not null, updated_at timestamp with time zone not null);
+
+create table public.shopify_connections (id uuid not null, user_id uuid not null, store_domain text not null, is_default boolean, created_at timestamp with time zone, updated_at timestamp with time zone, shopify_client_id text, shopify_client_secret text);
+
+create table public.user_feedback (id bigint not null, user_id uuid not null, feedback_text text not null, created_at timestamp with time zone not null);
+
+alter table public.pin_analytics_snapshots add constraint pin_analytics_snapshots_pin_id_fkey foreign key (pin_id) references public.pins (id);
+
+alter table public.pin_rejections add constraint pin_rejections_pin_id_fkey foreign key (pin_id) references public.pins (id);
+
+alter table public.ab_experiments add constraint ab_experiments_product_id_fkey foreign key (product_id) references public.products (id);
+
+alter table public.ab_experiments add constraint ab_experiments_pin_a_fkey foreign key (pin_a_id) references public.pins (id);
+
+alter table public.ab_experiments add constraint ab_experiments_pin_b_fkey foreign key (pin_b_id) references public.pins (id);
+
+alter table public.catalog_stores add constraint catalog_stores_brand_settings_id_fkey foreign key (brand_settings_id) references public.brand_settings (id);
+
+alter table public.products add constraint products_catalog_store_id_fkey foreign key (catalog_store_id) references public.catalog_stores (id);
+
+alter table public.catalog_sync_runs add constraint catalog_sync_runs_catalog_store_id_fkey foreign key (catalog_store_id) references public.catalog_stores (id);
+
+alter table public.dodo_payments add constraint dodo_payments_pricing_plan_id_fkey foreign key (pricing_plan_id) references public.dodo_pricing_plans (id);
+
+alter table public.dodo_subscription_changes add constraint dodo_subscription_changes_from_plan_id_fkey foreign key (from_plan_id) references public.dodo_pricing_plans (id);
+
+alter table public.dodo_subscription_changes add constraint dodo_subscription_changes_to_plan_id_fkey foreign key (to_plan_id) references public.dodo_pricing_plans (id);
+
+alter table public.dodo_subscriptions add constraint dodo_subscriptions_pricing_plan_id_fkey foreign key (pricing_plan_id) references public.dodo_pricing_plans (id);
+
+alter table public.products add constraint products_brand_settings_id_fkey foreign key (brand_settings_id) references public.brand_settings (id);
+
+alter table public.pins add constraint pins_product_id_fkey foreign key (product_id) references public.products (id);
+
+alter table public.pins add constraint pins_brand_settings_id_fkey foreign key (brand_settings_id) references public.brand_settings (id);
+
+alter table public.prompt_weights add constraint prompt_weights_brand_settings_id_fkey foreign key (brand_settings_id) references public.brand_settings (id);
+
+alter table public.account_health_log add constraint account_health_log_pinterest_fkey foreign key (pinterest_connection_id) references public.pinterest_connections (id);
+
+alter table public.pin_queue add constraint pin_queue_pin_id_fkey foreign key (pin_id) references public.pins (id);
+
+CREATE OR REPLACE FUNCTION public.set_catalog_stores_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.rls_auto_enable()
+ RETURNS event_trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog'
+AS $function$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN
+    SELECT *
+    FROM pg_event_trigger_ddl_commands()
+    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+      AND object_type IN ('table','partitioned table')
+  LOOP
+     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN
+      BEGIN
+        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);
+        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;
+      EXCEPTION
+        WHEN OTHERS THEN
+          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;
+      END;
+     ELSE
+        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;
+     END IF;
+  END LOOP;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.match_pin_angles(query_product_id uuid, query_embedding vector, match_threshold double precision, match_count integer)
+ RETURNS TABLE(id uuid, target_angle text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT
+    pins.id,
+    pins.target_angle,
+    1 - (pins.angle_embedding <=> query_embedding) AS similarity
+  FROM pins
+  WHERE pins.product_id = query_product_id
+    AND pins.angle_embedding IS NOT NULL
+    AND 1 - (pins.angle_embedding <=> query_embedding) > match_threshold
+  ORDER BY pins.angle_embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.consume_ai_tokens(p_user_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_subscription record;
+  v_usage record;
+  v_is_subscribed boolean := false;
+  v_tokens_remaining bigint;
+begin
+  -- 1. Check subscription status (active = subscribed)
+  select * into v_subscription
+  from dodo_subscriptions
+  where user_id = p_user_id
+    and status = 'active'
+  order by created_at desc
+  limit 1;
+  
+  v_is_subscribed := (v_subscription.id is not null);
+  
+  -- If not subscribed, deny immediately
+  if not v_is_subscribed then
+    return jsonb_build_object(
+      'allowed', false,
+      'reason', 'subscription_required',
+      'tokens_remaining', 0,
+      'is_subscribed', false
+    );
+  end if;
+  
+  -- 2. Get or create usage record
+  select * into v_usage
+  from ai_token_usage
+  where user_id = p_user_id;
+  
+  if v_usage.user_id is null then
+    -- First time user, create record with cycle start from subscription
+    insert into ai_token_usage (user_id, tokens_used, cycle_start_date)
+    values (
+      p_user_id, 
+      0, 
+      coalesce(v_subscription.current_period_end - interval '1 month', now())
+    )
+    returning * into v_usage;
+  end if;
+  
+  -- 3. Check if billing cycle has passed (lazy reset)
+  -- If subscription's current_period_end indicates a new billing cycle, reset tokens
+  if v_subscription.current_period_end is not null 
+     and v_usage.cycle_start_date < (v_subscription.current_period_end - interval '1 month') then
+    -- Reset the cycle
+    update ai_token_usage
+    set tokens_used = 0,
+        cycle_start_date = v_subscription.current_period_end - interval '1 month',
+        updated_at = now()
+    where user_id = p_user_id
+    returning * into v_usage;
+  end if;
+  
+  -- 4. Calculate remaining tokens
+  v_tokens_remaining := v_usage.tokens_limit - v_usage.tokens_used;
+  
+  -- 5. Check if quota exceeded
+  if v_tokens_remaining <= 0 then
+    return jsonb_build_object(
+      'allowed', false,
+      'reason', 'quota_exceeded',
+      'tokens_remaining', 0,
+      'tokens_used', v_usage.tokens_used,
+      'tokens_limit', v_usage.tokens_limit,
+      'is_subscribed', true,
+      'cycle_resets_at', v_subscription.current_period_end
+    );
+  end if;
+  
+  -- 6. Allowed!
+  return jsonb_build_object(
+    'allowed', true,
+    'tokens_remaining', v_tokens_remaining,
+    'tokens_used', v_usage.tokens_used,
+    'tokens_limit', v_usage.tokens_limit,
+    'is_subscribed', true,
+    'cycle_resets_at', v_subscription.current_period_end
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.find_covered_answer(check_embedding vector, brand_uuid uuid, match_threshold double precision)
+ RETURNS TABLE(article_id uuid, answer_text text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT first_covered_by, answer_unit, 1 - (answer_embedding <=> check_embedding)
+  FROM answer_coverage
+  WHERE brand_id = brand_uuid
+  AND answer_embedding IS NOT NULL
+  AND 1 - (answer_embedding <=> check_embedding) > match_threshold
+  ORDER BY 1 - (answer_embedding <=> check_embedding) DESC
+  LIMIT 1;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.find_live_url_from_article(target_article_id uuid, brand_uuid uuid, match_threshold double precision)
+ RETURNS TABLE(live_url text, live_title text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  source_vector vector(1536);
+BEGIN
+  -- 1. Get the source vector(1536) from the draft article
+  SELECT topic_embedding INTO source_vector
+  FROM articles
+  WHERE id = target_article_id;
+
+  -- 2. Find the matching live link
+  RETURN QUERY
+  SELECT url, title, 1 - (embedding <=> source_vector)
+  FROM internal_links
+  WHERE brand_id = brand_uuid
+  AND 1 - (embedding <=> source_vector) > match_threshold
+  ORDER BY 1 - (embedding <=> source_vector) DESC
+  LIMIT 1;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.match_articles_topic(query_embedding vector, match_threshold double precision, match_count integer, p_user_id uuid, p_brand_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(id uuid, keyword text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT
+    articles.id,
+    articles.keyword,
+    1 - (articles.topic_embedding <=> query_embedding) AS similarity
+  FROM articles
+  WHERE 1 - (articles.topic_embedding <=> query_embedding) > match_threshold
+    AND articles.user_id = p_user_id
+    AND (p_brand_id IS NULL OR articles.brand_id = p_brand_id)  -- NEW: Brand isolation
+  ORDER BY articles.topic_embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.match_internal_links(query_embedding vector, match_threshold double precision, match_count integer, p_user_id uuid)
+ RETURNS TABLE(id uuid, url text, title text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT
+    internal_links.id,
+    internal_links.url,
+    internal_links.title,
+    1 - (internal_links.embedding <=> query_embedding) AS similarity
+  FROM internal_links
+  WHERE 1 - (internal_links.embedding <=> query_embedding) > match_threshold
+    AND internal_links.user_id = p_user_id
+  ORDER BY internal_links.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.match_internal_links(query_embedding vector, match_threshold double precision, match_count integer, p_brand_id uuid, p_user_id uuid)
+ RETURNS TABLE(id uuid, url text, title text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT
+    internal_links.id,
+    internal_links.url,
+    internal_links.title,
+    1 - (internal_links.embedding <=> query_embedding) AS similarity
+  FROM internal_links
+  WHERE 1 - (internal_links.embedding <=> query_embedding) > match_threshold
+    AND internal_links.user_id = p_user_id
+    AND (p_brand_id IS NULL OR internal_links.brand_id = p_brand_id)
+  ORDER BY internal_links.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  INSERT INTO public.profiles (id, email)
+  VALUES (new.id, new.email)
+  ON CONFLICT (id) DO NOTHING;
+  RETURN new;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.match_articles(query_embedding vector, match_threshold double precision, match_count integer, p_user_id uuid, p_brand_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(id uuid, keyword text, similarity double precision)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT
+        articles.id,
+        articles.keyword,
+        1 - (articles.topic_embedding <=> query_embedding) AS similarity
+    FROM articles
+    WHERE 
+        articles.topic_embedding IS NOT NULL
+        AND 1 - (articles.topic_embedding <=> query_embedding) > match_threshold
+        AND articles.user_id = p_user_id
+        AND (p_brand_id IS NULL OR articles.brand_id = p_brand_id)
+    ORDER BY articles.topic_embedding <=> query_embedding
+    LIMIT match_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.record_ai_usage(p_user_id uuid, p_tokens_used bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_new_total bigint;
+  v_limit bigint;
+begin
+  -- Update usage, incrementing tokens_used
+  update ai_token_usage
+  set tokens_used = tokens_used + p_tokens_used,
+      last_request_at = now(),
+      updated_at = now()
+  where user_id = p_user_id
+  returning tokens_used, tokens_limit into v_new_total, v_limit;
+  
+  -- If no record exists (edge case), create one
+  if v_new_total is null then
+    insert into ai_token_usage (user_id, tokens_used)
+    values (p_user_id, p_tokens_used)
+    returning tokens_used, tokens_limit into v_new_total, v_limit;
+  end if;
+  
+  return jsonb_build_object(
+    'tokens_used', v_new_total,
+    'tokens_remaining', greatest(0, v_limit - v_new_total),
+    'tokens_limit', v_limit
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_sprint_balance(p_user_sprint_id uuid)
+ RETURNS TABLE(new_remaining integer, refresh_remaining integer, new_used integer, refresh_used integer, new_total integer, refresh_total integer)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+AS $function$
+    WITH grants AS (
+        SELECT 
+            COALESCE(SUM(CASE WHEN quota_type = 'new' AND delta > 0 THEN delta ELSE 0 END), 0)::integer AS new_total,
+            COALESCE(SUM(CASE WHEN quota_type = 'refresh' AND delta > 0 THEN delta ELSE 0 END), 0)::integer AS refresh_total,
+            COALESCE(SUM(CASE WHEN quota_type = 'new' AND delta < 0 THEN ABS(delta) ELSE 0 END), 0)::integer AS new_used,
+            COALESCE(SUM(CASE WHEN quota_type = 'refresh' AND delta < 0 THEN ABS(delta) ELSE 0 END), 0)::integer AS refresh_used
+        FROM sprint_quota_ledgers
+        WHERE user_sprint_id = p_user_sprint_id
+    )
+    SELECT 
+        (g.new_total - g.new_used)::integer AS new_remaining,
+        (g.refresh_total - g.refresh_used)::integer AS refresh_remaining,
+        g.new_used,
+        g.refresh_used,
+        g.new_total,
+        g.refresh_total
+    FROM grants g;
+$function$
+;"

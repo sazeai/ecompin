@@ -1,13 +1,9 @@
-import { MetadataRoute } from 'next'
-import { robotsConfig } from '@/config/seo'
+import type { MetadataRoute } from "next"
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://steal.lol").replace(/\/$/, "")
   return {
-    rules: {
-      userAgent: robotsConfig.rules.userAgent,
-      allow: robotsConfig.rules.allow,
-      disallow: robotsConfig.rules.disallow,
-    },
-    sitemap: robotsConfig.sitemap,
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api/"] },
+    sitemap: `${baseUrl}/sitemap.xml`,
   }
 }

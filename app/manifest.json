@@ -1,22 +1,11 @@
 {
-  "name": "EcomPin",
-  "short_name": "EcomPin",
-  "description": "Autonomous Pinterest marketing for Shopify and Etsy brands.",
+  "name": "STEAL.LOL",
+  "short_name": "STEAL.LOL",
+  "description": "People leaving SaaS products list themselves here. Competitors pay to win their business.",
   "icons": [
-    {
-      "src": "/web-app-manifest-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#151412",
+  "background_color": "#f6f4ef",
   "display": "standalone"
 }

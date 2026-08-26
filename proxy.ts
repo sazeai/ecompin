@@ -2,6 +2,27 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
+  const retiredProductRoutes = [
+    '/account',
+    '/analytics',
+    '/dashboard',
+    '/integrations',
+    '/login',
+    '/onboarding',
+    '/pin-generator',
+    '/pins',
+    '/pricing',
+    '/products',
+    '/settings',
+    '/subscribe',
+  ]
+  const isRetiredProductRoute = retiredProductRoutes.some(route =>
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
+  )
+  if (isRetiredProductRoute) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -63,6 +84,9 @@ export async function proxy(request: NextRequest) {
     '/api/csrf-token',
     '/api/auth',
     '/api/dodopayments/webhook',
+    '/api/opportunities',
+    '/api/offers',
+    '/api/admin/hide',
     '/api/images',
     '/api/render-pin',
   ]

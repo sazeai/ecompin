@@ -5,5 +5,5 @@ import { Resend } from 'resend';
 export const resend = new Resend(process.env.RESEND_API_KEY || '');
 
 // Using verified domain sub-domain for better deliverability
-export const EMAIL_FROM = process.env.EMAIL_FROM || 'Harvansh at FlipAEO <harvansh@support.flipaeo.com>';
-export const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'support@flipaeo.com';
+export const EMAIL_FROM = process.env.EMAIL_FROM || 'STEAL.LOL <offers@steal.lol>';
+export const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'support@steal.lol';
