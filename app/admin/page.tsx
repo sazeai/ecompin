@@ -13,7 +13,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!authenticated) {
     return (
       <main className="min-h-screen bg-[#f6f4ef] text-[#151412]">
-        <div className="mx-auto min-h-screen max-w-[1120px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
+        <div className="relative mx-auto min-h-screen max-w-[1120px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
           <section className="mx-auto flex min-h-[calc(100vh-76px)] max-w-sm items-center px-5 py-20">
             <form action={loginAdmin} className="w-full rounded-[14px] border border-black/10 bg-white p-7 shadow-xl">
               <p className="text-xs font-extrabold tracking-[0.14em] text-[#e4573e]">PRIVATE ACCESS</p>
@@ -32,8 +32,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { opportunities, offers } = await getAdminMarketplaceData()
   return (
     <main className="min-h-screen bg-[#f6f4ef] text-[#151412]">
-      <div className="mx-auto min-h-screen max-w-[1280px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
-        <div className="px-5 py-12 sm:px-8">
+      <div className="relative mx-auto min-h-screen max-w-[1280px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
+        <div className="px-5 pb-12 pt-40 sm:px-8">
           <p className="text-xs font-extrabold tracking-[0.14em] text-[#e4573e]">PRIVATE · MODERATION</p>
           <h1 className="mt-3 font-instrument-serif text-5xl">Marketplace admin.</h1>
 

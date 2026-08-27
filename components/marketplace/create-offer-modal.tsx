@@ -6,12 +6,13 @@ import { ArrowRight, LoaderCircle } from "lucide-react"
 import { FormField, TextArea, TextInput } from "@/components/marketplace/form-field"
 import { ModalShell } from "@/components/marketplace/modal-shell"
 
-export function CreateOfferModal({ opportunityId, leavingProduct, monthlySpend, isDemo, wide = false }: {
+export function CreateOfferModal({ opportunityId, leavingProduct, monthlySpend, isDemo, wide = false, inverted = false }: {
   opportunityId: string
   leavingProduct: string
   monthlySpend: number
   isDemo: boolean
   wide?: boolean
+  inverted?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -48,7 +49,7 @@ export function CreateOfferModal({ opportunityId, leavingProduct, monthlySpend, 
 
   return (
     <>
-      <button type="button" disabled={isDemo} onClick={() => setOpen(true)} className={`${wide ? "w-full" : "w-full sm:w-auto"} inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] bg-white px-5 text-[14px] font-extrabold tracking-[-0.01em] text-black transition hover:bg-[#eeece7] disabled:cursor-not-allowed disabled:bg-white/55 disabled:text-black/50`}>
+      <button type="button" disabled={isDemo} onClick={() => setOpen(true)} className={`${wide ? "w-full" : "w-full sm:w-auto"} inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-semibold tracking-[-0.01em] transition ${inverted ? "bg-white text-[#111] hover:bg-[#f4f2ed] disabled:bg-white/55" : "bg-[#111] text-white shadow-sm hover:bg-black disabled:bg-[#aaa]"} disabled:cursor-not-allowed`}>
         {isDemo ? "DEMO LISTING — OFFERS DISABLED" : <>STEAL THIS CUSTOMER — $9 <ArrowRight size={16} /></>}
       </button>
 

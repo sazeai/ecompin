@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { FormField, TextArea, TextInput } from "@/components/marketplace/form-field"
 import { ModalShell } from "@/components/marketplace/modal-shell"
 
-export function CreateOpportunityModal({ trigger = "I'M LEAVING A SAAS", compact = false }: { trigger?: string; compact?: boolean }) {
+export function CreateOpportunityModal({ trigger = "I'M LEAVING A SAAS", compact = false, inverted = false }: { trigger?: string; compact?: boolean; inverted?: boolean }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -46,7 +46,9 @@ export function CreateOpportunityModal({ trigger = "I'M LEAVING A SAAS", compact
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={compact
+      <button type="button" onClick={() => setOpen(true)} className={inverted
+        ? "inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[#111] shadow-[0_4px_18px_rgba(255,255,255,.13)] transition hover:-translate-y-0.5 hover:bg-[#fafafa]"
+        : compact
         ? "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#151412] px-4 text-sm font-semibold text-white transition hover:bg-black"
         : "inline-flex min-h-12 items-center gap-2 rounded-full bg-[#151412] px-5 text-[15px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,.14)] transition hover:-translate-y-0.5 hover:bg-black"}>
         {trigger} <ArrowRight size={16} />
