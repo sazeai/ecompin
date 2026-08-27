@@ -1,11 +1,11 @@
 {
-  "name": "STEAL.LOL",
-  "short_name": "STEAL.LOL",
-  "description": "People leaving SaaS products list themselves here. Competitors pay to win their business.",
+  "name": "FIXTHIS",
+  "short_name": "FIXTHIS",
+  "description": "Real problems collect demand. Products compete for paid exposure as the featured solution.",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
-  "theme_color": "#151412",
-  "background_color": "#f6f4ef",
+  "theme_color": "#111111",
+  "background_color": "#fafafa",
   "display": "standalone"
 }

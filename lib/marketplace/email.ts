@@ -1,56 +1,44 @@
 import "server-only"
 
-import { resend } from "@/lib/emails/client"
-import { getProductHost } from "@/lib/marketplace/helpers"
+import { randomBytes } from "crypto"
+import { EMAIL_FROM, EMAIL_REPLY_TO, resend } from "@/lib/emails/client"
+import { getAppUrl, sha256 } from "@/lib/marketplace/helpers"
+import { createAdminClient } from "@/utils/supabase/admin"
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;")
+async function send(payload: { to: string; subject: string; html: string }) {
+  if (!process.env.RESEND_API_KEY) { console.warn(`Email skipped: ${payload.subject}`); return }
+  await resend.emails.send({ from: EMAIL_FROM, replyTo: EMAIL_REPLY_TO, ...payload })
 }
 
-export async function sendOfferPublishedEmail(params: {
-  customerEmail: string
-  leavingProduct: string
-  productName: string
-  productUrl: string
-  offerText: string
-  opportunityUrl: string
-}) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("RESEND_API_KEY is not configured; paid-offer notification skipped.")
-    return
-  }
-
-  const from = process.env.EMAIL_FROM || "STEAL.LOL <offers@steal.lol>"
-  const replyTo = process.env.EMAIL_REPLY_TO || undefined
-  const productHost = getProductHost(params.productUrl)
-
-  await resend.emails.send({
-    from,
-    to: params.customerEmail,
-    replyTo,
-    subject: `Someone wants to steal you from ${params.leavingProduct}`,
-    html: `
-      <div style="background:#f5f3ee;padding:40px 16px;font-family:Inter,Arial,sans-serif;color:#111">
-        <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #dedbd3;border-radius:14px;overflow:hidden">
-          <div style="padding:18px 24px;border-bottom:1px solid #ece9e2;font-weight:800;letter-spacing:-.03em">STEAL.LOL</div>
-          <div style="padding:32px 24px">
-            <p style="margin:0 0 8px;color:#e04f35;font-size:12px;font-weight:800;letter-spacing:.12em">NEW PAID OFFER</p>
-            <h1 style="margin:0 0 20px;font-size:30px;line-height:1.1">${escapeHtml(params.productName)} made you an offer.</h1>
-            <p style="margin:0 0 20px;color:#5f5b55;line-height:1.6">You’re currently listed as leaving <strong>${escapeHtml(params.leavingProduct)}</strong>.</p>
-            <div style="margin:0 0 24px;padding:20px;background:#f7f5f0;border:1px solid #e8e4dc;border-radius:10px">
-              <p style="margin:0 0 8px;font-weight:700">${escapeHtml(params.productName)} says:</p>
-              <p style="margin:0;font-size:18px;line-height:1.5">“${escapeHtml(params.offerText)}”</p>
-            </div>
-            <a href="${escapeHtml(params.productUrl)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:13px 18px;border-radius:9px;font-weight:700">VIEW THEIR OFFER →</a>
-            <p style="margin:14px 0 0"><a href="${escapeHtml(params.opportunityUrl)}" style="color:#5f5b55">View all offers</a></p>
-          </div>
-          <div style="padding:16px 24px;border-top:1px solid #ece9e2;color:#7a756d;font-size:12px">${escapeHtml(productHost)} is responsible for honoring this offer. STEAL.LOL does not share your email.</div>
-        </div>
-      </div>`,
+export async function createProblemSubscription(problemId: string, email: string, appUrl = getAppUrl()) {
+  const token = randomBytes(32).toString("base64url")
+  const supabase = createAdminClient()
+  const { error } = await supabase.from("problem_subscriptions").upsert({
+    problem_id: problemId, email: email.toLowerCase(), verification_token_hash: sha256(token), verified_at: null,
+  }, { onConflict: "problem_id,email" })
+  if (error) throw error
+  await send({
+    to: email,
+    subject: "Confirm your FIXTHIS problem alert",
+    html: `<p>Confirm that you want an email when this problem gets its first solution.</p><p><a href="${appUrl}/api/subscriptions/verify?token=${encodeURIComponent(token)}">Confirm alert</a></p><p>If you did not request this, ignore this email.</p>`,
   })
+}
+
+export async function sendManagementLink(email: string, token: string, productName: string, appUrl = getAppUrl()) {
+  await send({
+    to: email,
+    subject: `Manage ${productName} on FIXTHIS`,
+    html: `<p>Your paid placement is live. Use this private link to edit the product, see traffic, or bid again.</p><p><a href="${appUrl}/manage/${encodeURIComponent(token)}">Manage ${productName}</a></p><p>This link expires in 30 days. Do not forward it.</p>`,
+  })
+}
+
+export async function notifyProblemSubscribers(problemId: string, statement: string, productName: string, slug: string, appUrl = getAppUrl()) {
+  const supabase = createAdminClient()
+  const { data } = await supabase.from("problem_subscriptions").select("id,email").eq("problem_id", problemId).not("verified_at", "is", null).is("notified_at", null)
+  for (const subscriber of data || []) {
+    try {
+      await send({ to: subscriber.email, subject: `${productName} claimed a problem you follow`, html: `<p>${productName} is now a featured paid solution for:</p><blockquote>${statement}</blockquote><p><a href="${appUrl}/problems/${slug}">See the problem</a></p>` })
+      await supabase.from("problem_subscriptions").update({ notified_at: new Date().toISOString() }).eq("id", subscriber.id)
+    } catch (error) { console.error("Problem subscriber notification failed", error) }
+  }
 }

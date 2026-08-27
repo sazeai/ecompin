@@ -1,51 +1,15 @@
-import { AdminHideButton } from "@/components/marketplace/admin-hide-button"
-import { Header } from "@/components/marketplace/header"
+import { AdminActionButton } from "@/components/marketplace/admin-action-button"
+import { FoundingClaimForm } from "@/components/marketplace/founding-claim-form"
 import { loginAdmin } from "@/app/admin/actions"
+import { formatMoney } from "@/lib/marketplace/helpers"
 import { isAdminAuthenticated } from "@/lib/marketplace/admin-auth"
 import { getAdminMarketplaceData } from "@/lib/marketplace/queries"
 
 export const dynamic = "force-dynamic"
-
+export const metadata = { title: "Admin", robots: { index: false, follow: false } }
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const authenticated = await isAdminAuthenticated()
   const query = await searchParams
-
-  if (!authenticated) {
-    return (
-      <main className="min-h-screen bg-[#f6f4ef] text-[#151412]">
-        <div className="relative mx-auto min-h-screen max-w-[1120px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
-          <section className="mx-auto flex min-h-[calc(100vh-76px)] max-w-sm items-center px-5 py-20">
-            <form action={loginAdmin} className="w-full rounded-[14px] border border-black/10 bg-white p-7 shadow-xl">
-              <p className="text-xs font-extrabold tracking-[0.14em] text-[#e4573e]">PRIVATE ACCESS</p>
-              <h1 className="mt-3 font-instrument-serif text-4xl">STEAL admin.</h1>
-              <label className="mt-7 block text-sm font-semibold">Password<input name="password" type="password" required autoFocus className="mt-2 min-h-12 w-full rounded-[10px] border border-black/15 px-3 outline-none focus:border-black" /></label>
-              {query.error ? <p className="mt-3 text-sm text-red-700">That password isn&apos;t right.</p> : null}
-              {!process.env.STEAL_ADMIN_PASSWORD ? <p className="mt-3 text-sm text-amber-700">Set STEAL_ADMIN_PASSWORD before using admin.</p> : null}
-              <button className="mt-5 min-h-12 w-full rounded-[10px] bg-[#151412] text-sm font-bold text-white">ENTER ADMIN</button>
-            </form>
-          </section>
-        </div>
-      </main>
-    )
-  }
-
-  const { opportunities, offers } = await getAdminMarketplaceData()
-  return (
-    <main className="min-h-screen bg-[#f6f4ef] text-[#151412]">
-      <div className="relative mx-auto min-h-screen max-w-[1280px] border-x border-black/10 bg-[#fbfaf7]"><Header back />
-        <div className="px-5 pb-12 pt-40 sm:px-8">
-          <p className="text-xs font-extrabold tracking-[0.14em] text-[#e4573e]">PRIVATE · MODERATION</p>
-          <h1 className="mt-3 font-instrument-serif text-5xl">Marketplace admin.</h1>
-
-          <section className="mt-12"><h2 className="font-instrument-serif text-3xl">Opportunities <span className="text-lg text-[#77726a]">({opportunities.length})</span></h2>
-            <div className="mt-4 overflow-x-auto rounded-[12px] border border-black/10 bg-white"><table className="w-full min-w-[1000px] text-left text-xs"><thead className="bg-[#f2f0eb] text-[#68635b]"><tr>{["Product", "Spend", "Reason", "Customer email", "Created", "Status", ""].map((item, index) => <th key={`${item}-${index}`} className="px-4 py-3 font-bold">{item}</th>)}</tr></thead><tbody>{opportunities.map((item) => <tr key={item.id} className="border-t border-black/8"><td className="px-4 py-3 font-semibold">{item.leaving_product}{item.is_demo ? " · DEMO" : ""}</td><td className="px-4 py-3">${item.monthly_spend}/mo</td><td className="max-w-[260px] truncate px-4 py-3">{item.reason}</td><td className="px-4 py-3">{item.customer_email}</td><td className="px-4 py-3">{new Date(item.created_at).toLocaleString()}</td><td className="px-4 py-3">{item.status}</td><td className="px-4 py-3"><AdminHideButton type="opportunity" id={item.id} disabled={item.status === "hidden"} /></td></tr>)}</tbody></table></div>
-          </section>
-
-          <section className="mt-12"><h2 className="font-instrument-serif text-3xl">Offers <span className="text-lg text-[#77726a]">({offers.length})</span></h2>
-            <div className="mt-4 overflow-x-auto rounded-[12px] border border-black/10 bg-white"><table className="w-full min-w-[1050px] text-left text-xs"><thead className="bg-[#f2f0eb] text-[#68635b]"><tr>{["Provider", "URL", "Offer", "Provider email", "Payment", "Created", ""].map((item, index) => <th key={`${item}-${index}`} className="px-4 py-3 font-bold">{item}</th>)}</tr></thead><tbody>{offers.map((item) => <tr key={item.id} className="border-t border-black/8"><td className="px-4 py-3 font-semibold">{item.product_name}</td><td className="max-w-[180px] truncate px-4 py-3">{item.product_url}</td><td className="max-w-[260px] truncate px-4 py-3">{item.offer_text}</td><td className="px-4 py-3">{item.provider_email}</td><td className="px-4 py-3">{item.payment_status}</td><td className="px-4 py-3">{new Date(item.created_at).toLocaleString()}</td><td className="px-4 py-3"><AdminHideButton type="offer" id={item.id} disabled={item.is_hidden} /></td></tr>)}</tbody></table></div>
-          </section>
-        </div>
-      </div>
-    </main>
-  )
+  if (!await isAdminAuthenticated()) return <main className="grid min-h-screen place-items-center bg-[#f4f1ea] p-5"><form action={loginAdmin} className="w-full max-w-sm rounded-3xl border border-black/10 bg-white p-7"><p className="font-[var(--font-clash)] text-3xl">FIXTHIS admin</p><input name="password" type="password" required autoFocus placeholder="Admin password" className="mt-6 min-h-12 w-full rounded-xl border border-black/15 px-3" />{query.error && <p className="mt-2 text-sm text-red-700">Wrong password.</p>}<button className="mt-4 min-h-11 w-full rounded-xl bg-black text-sm font-bold text-white">ENTER</button></form></main>
+  const { problems, placements } = await getAdminMarketplaceData()
+  return <main className="min-h-screen bg-[#f4f1ea] px-5 py-10"><div className="mx-auto max-w-7xl"><h1 className="font-[var(--font-clash)] text-5xl tracking-[-.05em]">Market operations.</h1><p className="mt-2 text-sm text-black/50">Moderation, founding inventory, placements, and honest traffic.</p><section className="mt-10"><h2 className="font-[var(--font-clash)] text-2xl">Add founding claim</h2><div className="mt-4"><FoundingClaimForm problems={problems.filter((p) => p.status === "published").map((p) => ({ id: p.id, statement: p.statement }))} /></div></section><section className="mt-12"><h2 className="font-[var(--font-clash)] text-2xl">Problems · {problems.length}</h2><div className="mt-4 overflow-x-auto rounded-2xl border border-black/10 bg-white"><table className="w-full min-w-[900px] text-left text-xs"><thead className="bg-black/5"><tr>{["Problem","Origin","Demand","Traffic","Status","Actions"].map((x) => <th key={x} className="p-3">{x}</th>)}</tr></thead><tbody>{problems.map((p) => <tr key={p.id} className="border-t border-black/10"><td className="max-w-md p-3 font-semibold">{p.statement}</td><td className="p-3">{p.origin}</td><td className="p-3">{p.support_count}</td><td className="p-3">{p.impression_count} / {p.click_count}</td><td className="p-3">{p.status}</td><td className="flex gap-2 p-3">{p.status === "published" ? <AdminActionButton entity="problem" id={p.id} action="hide" /> : <AdminActionButton entity="problem" id={p.id} action="publish" />}</td></tr>)}</tbody></table></div></section><section className="mt-12"><h2 className="font-[var(--font-clash)] text-2xl">Placements · {placements.length}</h2><div className="mt-4 overflow-x-auto rounded-2xl border border-black/10 bg-white"><table className="w-full min-w-[1000px] text-left text-xs"><thead className="bg-black/5"><tr>{["Product","Problem","Rank / bid","Traffic","Owner","Status","Actions"].map((x) => <th key={x} className="p-3">{x}</th>)}</tr></thead><tbody>{placements.map((p) => <tr key={p.placement_id} className="border-t border-black/10"><td className="p-3 font-semibold">{p.product_name}</td><td className="max-w-sm p-3">{p.problem_statement}</td><td className="p-3">#{p.rank} · {p.founding_claim ? "$0 founding" : formatMoney(p.current_bid_cents)}</td><td className="p-3">{p.impression_count} / {p.click_count}</td><td className="p-3">{p.owner_email}</td><td className="p-3">{p.status}</td><td className="flex gap-2 p-3">{p.status === "active" ? <AdminActionButton entity="placement" id={p.placement_id} action="suspend" /> : <AdminActionButton entity="placement" id={p.placement_id} action="restore" />}</td></tr>)}</tbody></table></div></section></div></main>
 }

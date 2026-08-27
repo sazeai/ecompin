@@ -3,16 +3,16 @@ import "server-only"
 import { createHmac, timingSafeEqual } from "crypto"
 import { cookies } from "next/headers"
 
-export const ADMIN_COOKIE = "steal_admin"
+export const ADMIN_COOKIE = "fixthis_admin"
 
 function getAdminSecret() {
-  return process.env.STEAL_ADMIN_PASSWORD || ""
+  return process.env.FIXTHIS_ADMIN_PASSWORD || ""
 }
 
 export function createAdminToken() {
   const secret = getAdminSecret()
   if (!secret) return ""
-  return createHmac("sha256", secret).update("steal.lol-admin-v1").digest("hex")
+  return createHmac("sha256", secret).update("fixthis-admin-v1").digest("hex")
 }
 
 export function verifyAdminPassword(password: string) {

@@ -1,6 +1,5 @@
 import 'server-only';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { type Database } from '@/types/supabase';
 
 /**
  * ⚠️ ADMIN CLIENT - DANGER ZONE ⚠️
@@ -33,5 +32,7 @@ export const createAdminClient = () => {
     );
   }
 
-  return createSupabaseClient<Database>(supabaseUrl, supabaseServiceKey);
+  return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 };

@@ -1,147 +1,24 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { randomBytes } from "crypto"
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function proxy(request: NextRequest) {
-  const retiredProductRoutes = [
-    '/account',
-    '/analytics',
-    '/dashboard',
-    '/integrations',
-    '/login',
-    '/onboarding',
-    '/pin-generator',
-    '/pins',
-    '/pricing',
-    '/products',
-    '/settings',
-    '/subscribe',
-  ]
-  const isRetiredProductRoute = retiredProductRoutes.some(route =>
-    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
-  )
-  if (isRetiredProductRoute) {
-    return NextResponse.redirect(new URL('/', request.url))
+const VISITOR_COOKIE = "fixthis_visitor"
+
+export function proxy(request: NextRequest) {
+  const response = NextResponse.next()
+  if (!request.cookies.get(VISITOR_COOKIE)?.value) {
+    response.cookies.set(VISITOR_COOKIE, randomBytes(24).toString("base64url"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    })
   }
-
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-    }
-  )
-
-  // Public API routes that don't require authentication
-  // - csrf-token: needed for login form before user is authenticated
-  // - auth: OAuth callbacks during authentication flow
-  // - dodopayments/webhook: external webhook with its own signature verification
-  // - images: public image proxy for blog featured images
-  const publicApiRoutes = [
-    '/api/csrf-token',
-    '/api/auth',
-    '/api/dodopayments/webhook',
-    '/api/opportunities',
-    '/api/offers',
-    '/api/admin/hide',
-    '/api/images',
-    '/api/render-pin',
-  ]
-  const isPublicApiRoute = publicApiRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  // Protected routes - ONLY these require authentication
-  const protectedRoutes = ['/dashboard', '/seo-health', '/reports', '/settings', '/articles', '/integrations', '/subscribe', '/onboarding', '/account', '/api']
-  const isProtectedRoute = protectedRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  ) && !isPublicApiRoute // Exclude public API routes from protection
-
-  // Only run auth check for protected routes or login page
-  const needsAuthCheck = isProtectedRoute || request.nextUrl.pathname === '/login'
-
-  if (!needsAuthCheck) {
-    // All other routes skip auth entirely - no getUser() call
-    return response
-  }
-
-  // Check if the user is authenticated (only for routes that need it)
-  let user = null
-  try {
-    const { data, error } = await supabase.auth.getUser()
-    if (!error) {
-      user = data.user
-    }
-  } catch {
-    // Auth call failed (rate limit, network error, etc.) — skip redirects to avoid loops
-    return response
-  }
-
-  // If accessing protected routes and not authenticated, redirect to login
-  if (isProtectedRoute && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // If authenticated and trying to access login, redirect to dashboard
-  if (request.nextUrl.pathname === '/login' && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
   return response
 }
 
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
-}
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)"] }

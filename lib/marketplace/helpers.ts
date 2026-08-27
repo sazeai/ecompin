@@ -1,16 +1,30 @@
-import { randomBytes } from "crypto"
+import { createHash, randomBytes } from "crypto"
+import { getDomain } from "tldts"
 
-export function createOpportunitySlug(productName: string) {
-  const normalized = productName
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 44) || "saas"
+export const PROBLEM_CATEGORIES = [
+  "Analytics", "Automation", "Communication", "Design", "Developer tools",
+  "Finance", "Knowledge", "Marketing", "Product", "Productivity", "Sales", "Support", "Other",
+] as const
 
-  const suffix = randomBytes(2).toString("hex")
-  return `leaving-${normalized}-${suffix}`
+export function normalizeProblemStatement(value: string) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+}
+
+export function createProblemSlug(statement: string) {
+  const normalized = normalizeProblemStatement(statement).split(" ").slice(0, 9).join("-").slice(0, 72) || "problem"
+  return `${normalized}-${randomBytes(2).toString("hex")}`
+}
+
+export function normalizeProductUrl(value: string) {
+  const url = new URL(value)
+  if (url.protocol !== "https:") throw new Error("Product URLs must use HTTPS.")
+  if (url.username || url.password) throw new Error("Product URLs cannot contain credentials.")
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, "")
+  if (hostname === "localhost" || hostname.endsWith(".local")) throw new Error("Enter a public product URL.")
+  const domain = getDomain(hostname, { allowPrivateDomains: false })
+  if (!domain) throw new Error("Enter a valid public product domain.")
+  url.hash = ""
+  return { destinationUrl: url.toString(), registrableDomain: domain.toLowerCase() }
 }
 
 export function getAppUrl(requestUrl?: string) {
@@ -20,34 +34,31 @@ export function getAppUrl(requestUrl?: string) {
   return "http://localhost:3000"
 }
 
-export function getProductHost(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "")
-  } catch {
-    return url
-  }
-}
-
-export function formatRelativeTime(value: string | Date) {
-  const date = value instanceof Date ? value : new Date(value)
-  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000))
-
-  if (seconds < 60) return "Listed just now"
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `Listed ${minutes} minute${minutes === 1 ? "" : "s"} ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `Listed ${hours} hour${hours === 1 ? "" : "s"} ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `Listed ${days} day${days === 1 ? "" : "s"} ago`
-
-  return `Listed ${date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: date.getFullYear() === new Date().getFullYear() ? undefined : "numeric" })}`
-}
-
 export function getRequestIp(request: Request) {
-  return (
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "unknown"
-  )
+  return request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+}
+
+export function isKnownBot(request: Request) {
+  const userAgent = request.headers.get("user-agent") || ""
+  return /bot|crawler|spider|slurp|facebookexternalhit|twitterbot|slackbot|discordbot|preview/i.test(userAgent)
+}
+
+export function sha256(value: string) { return createHash("sha256").update(value).digest("hex") }
+
+export function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(cents / 100)
+}
+
+export function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("en-US", { notation: value >= 1000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(value)
+}
+
+export function rotationPercentages(count: number) {
+  if (count <= 0) return []
+  if (count === 1) return [100]
+  if (count === 2) return [70, 30]
+  const lowerCount = Math.min(count, 5) - 2
+  const base = Math.floor(15 / lowerCount)
+  const remainder = 15 % lowerCount
+  return [60, 25, ...Array.from({ length: lowerCount }, (_, index) => base + (index < remainder ? 1 : 0))]
 }
