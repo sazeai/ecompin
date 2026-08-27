@@ -22,7 +22,7 @@ export async function getMarketplaceOpportunities(): Promise<Opportunity[]> {
   const ids = opportunities.map((item: { id: string }) => item.id)
   const { data: paidOffers, error: offerError } = await supabase
     .from("offers")
-    .select("opportunity_id")
+    .select("opportunity_id, product_name")
     .in("opportunity_id", ids)
     .eq("payment_status", "paid")
     .eq("is_hidden", false)
@@ -30,13 +30,18 @@ export async function getMarketplaceOpportunities(): Promise<Opportunity[]> {
   if (offerError) throw offerError
 
   const counts = new Map<string, number>()
+  const products = new Map<string, string[]>()
   for (const offer of paidOffers || []) {
     counts.set(offer.opportunity_id, (counts.get(offer.opportunity_id) || 0) + 1)
+    const names = products.get(offer.opportunity_id) || []
+    if (!names.includes(offer.product_name)) names.push(offer.product_name)
+    products.set(offer.opportunity_id, names)
   }
 
-  return opportunities.map((item: Omit<Opportunity, "offer_count">) => ({
+  return opportunities.map((item: Omit<Opportunity, "offer_count" | "offer_products">) => ({
     ...item,
     offer_count: counts.get(item.id) || 0,
+    offer_products: products.get(item.id) || [],
   }))
 }
 
@@ -60,7 +65,7 @@ export async function getOpportunityBySlug(slug: string): Promise<OpportunityPri
     .eq("is_hidden", false)
 
   if (countError) throw countError
-  return { ...data, offer_count: count || 0 }
+  return { ...data, offer_count: count || 0, offer_products: [] }
 }
 
 export async function getPaidOffers(opportunityId: string): Promise<Offer[]> {
@@ -91,7 +96,7 @@ export async function getAdminMarketplaceData(): Promise<{
   if (offerError) throw offerError
 
   return {
-    opportunities: (opportunities || []).map((item) => ({ ...item, offer_count: 0 })),
+    opportunities: (opportunities || []).map((item) => ({ ...item, offer_count: 0, offer_products: [] })),
     offers: offers || [],
   }
 }

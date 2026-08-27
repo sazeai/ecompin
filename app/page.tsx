@@ -35,9 +35,9 @@ export default async function HomePage() {
       <div className="flex min-h-screen flex-col items-center">
         <MarketplaceFrame>
           <Header />
-          <main className="relative z-10 mt-32 flex w-full flex-col items-center">
+          <main className="relative z-10 mt-28 flex w-full flex-col items-center">
             <Hero />
-            <FramedSection contentClassName="pt-8"><OpportunityGrid opportunities={opportunities} /></FramedSection>
+            <FramedSection contentClassName="pt-6"><OpportunityGrid opportunities={opportunities} /></FramedSection>
             <FramedSection contentClassName="pb-16"><HowItWorks /></FramedSection>
             <FramedSection><Footer /></FramedSection>
           </main>

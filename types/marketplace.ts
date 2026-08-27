@@ -11,6 +11,7 @@ export type Opportunity = {
   is_demo: boolean
   created_at: string
   offer_count: number
+  offer_products: string[]
 }
 
 export type OpportunityPrivate = Opportunity & {
